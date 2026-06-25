@@ -287,12 +287,20 @@ Body:
 
 Rules:
 - Phải có ca đang mở mới được tạo đơn
-- Đơn mới tạo: `orderStatus = PENDING`, `paymentStatus = UNPAID`
+- POS-02 giả định thanh toán đã thành công
+- Đơn mới tạo đi thẳng vào hàng đợi: `orderStatus = PROCESSING`
+- Đơn nhận `queueNumber` tăng dần trong ca hiện tại
 
 ### GET /orders
 **Lấy danh sách đơn**
 
-Query: `?fromDate=2026-06-01&toDate=2026-06-22&shiftId=1&cashierId=2&orderStatus=COMPLETED&paymentStatus=PAID`
+Query: `?keyword=ORD-123&status=UNFINISHED&page=0&size=20`
+
+Filter:
+- `UNFINISHED`: gồm `PENDING` và `PROCESSING`
+- `COMPLETED`
+- `CANCELLED`
+- `ALL`
 
 ### GET /orders/{id}
 **Xem chi tiết đơn**
@@ -316,10 +324,20 @@ Rules: Chỉ sửa khi chưa COMPLETED, CANCELLED, REFUNDED
 
 Body:
 ```json
-{ "orderStatus": "PROCESSING" }
+{ "status": "COMPLETED" }
 ```
 
-Status: `PENDING` | `PROCESSING` | `COMPLETED` | `CANCELLED` | `REFUNDED`
+Luồng hợp lệ:
+- `PENDING/PROCESSING → COMPLETED`
+- `PENDING/PROCESSING → CANCELLED`
+- Đơn `COMPLETED` hoặc `CANCELLED` không được đổi trạng thái tiếp
+
+Hủy đơn:
+```json
+{ "status": "CANCELLED", "reason": "Khách đổi ý" }
+```
+
+Lý do hủy là bắt buộc. Nếu đơn tiền mặt đã được ghi nhận thanh toán, hệ thống hoàn lại số tiền khỏi tiền dự kiến của ca.
 
 ### PATCH /orders/{id}/complete
 **Đánh dấu đơn đã hoàn thành**

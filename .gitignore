@@ -89,3 +89,5 @@ worktrees/
 .claude/
 .openai/
 .opencode/
+.agents/
+.codex/

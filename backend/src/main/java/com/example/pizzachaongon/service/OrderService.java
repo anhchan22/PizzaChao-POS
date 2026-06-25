@@ -7,6 +7,8 @@ import com.example.pizzachaongon.dto.response.OrderItemResponse;
 import com.example.pizzachaongon.dto.response.OrderResponse;
 import com.example.pizzachaongon.entity.*;
 import com.example.pizzachaongon.enums.OrderStatus;
+import com.example.pizzachaongon.exception.BadRequestException;
+import com.example.pizzachaongon.exception.ResourceNotFoundException;
 import com.example.pizzachaongon.repository.*;
 import lombok.RequiredArgsConstructor;
 import com.example.pizzachaongon.enums.PaymentStatus;
@@ -16,6 +18,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -43,7 +47,8 @@ public class OrderService {
         order.setCustomerName(request.getCustomerName());
         order.setCustomerPhone(request.getCustomerPhone());
         order.setPaymentMethod(request.getPaymentMethod());
-        order.setStatus(OrderStatus.PENDING);
+        // POS-02 giả định thanh toán đã hoàn tất: đơn đi thẳng vào hàng đợi chuẩn bị.
+        order.setStatus(OrderStatus.PROCESSING);
         order.setNote(request.getNote());
         order.setCreatedBy(currentUser);
         order.setShift(currentShift);
@@ -114,30 +119,67 @@ public class OrderService {
     }
 
     public Page<OrderResponse> getAllOrders(String keyword, String status, Pageable pageable) {
-        Page<Order> orders;
-        if (status != null && !status.isEmpty()) {
-            OrderStatus orderStatus = OrderStatus.valueOf(status);
-            orders = orderRepository.findByStatus(orderStatus, pageable);
-        } else if (keyword != null && !keyword.isEmpty()) {
-            orders = orderRepository.findByOrderCodeContainingIgnoreCaseOrCustomerNameContainingIgnoreCaseOrCustomerPhoneContaining(
-                    keyword, keyword, keyword, pageable);
-        } else {
-            orders = orderRepository.findAll(pageable);
-        }
+        String normalizedKeyword = keyword != null && !keyword.isBlank() ? keyword.trim() : null;
+        Page<Order> orders = switch (status == null ? "ALL" : status.toUpperCase()) {
+            case "UNFINISHED" -> orderRepository.findByStatusesAndKeyword(
+                    EnumSet.of(OrderStatus.PENDING, OrderStatus.PROCESSING),
+                    normalizedKeyword,
+                    pageable
+            );
+            case "COMPLETED" -> orderRepository.findByStatusesAndKeyword(
+                    EnumSet.of(OrderStatus.COMPLETED),
+                    normalizedKeyword,
+                    pageable
+            );
+            case "CANCELLED" -> orderRepository.findByStatusesAndKeyword(
+                    EnumSet.of(OrderStatus.CANCELLED),
+                    normalizedKeyword,
+                    pageable
+            );
+            case "ALL", "" -> orderRepository.findAllByKeyword(normalizedKeyword, pageable);
+            default -> throw new BadRequestException("Trạng thái lọc đơn hàng không hợp lệ.");
+        };
         return orders.map(this::mapToResponse);
     }
 
     public OrderResponse getOrderById(Long id) {
         Order order = orderRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng"));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đơn hàng"));
         return mapToResponse(order);
     }
 
     @Transactional
-    public OrderResponse updateOrderStatus(Long id, OrderStatus newStatus) {
+    public OrderResponse updateOrderStatus(Long id, OrderStatus newStatus, String reason) {
         Order order = orderRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng"));
-        
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đơn hàng"));
+
+        if (order.getStatus() == OrderStatus.COMPLETED || order.getStatus() == OrderStatus.CANCELLED) {
+            throw new BadRequestException("Đơn hàng đã kết thúc, không thể đổi trạng thái.");
+        }
+        if (newStatus != OrderStatus.COMPLETED && newStatus != OrderStatus.CANCELLED) {
+            throw new BadRequestException("Chỉ có thể xác nhận hoàn thành hoặc hủy đơn.");
+        }
+
+        if (newStatus == OrderStatus.CANCELLED) {
+            if (reason == null || reason.isBlank()) {
+                throw new BadRequestException("Vui lòng nhập lý do hủy đơn.");
+            }
+            order.setCancelReason(reason.trim());
+            order.setCancelledAt(LocalDateTime.now());
+            if (order.getPayment() != null && order.getPayment().getStatus() == PaymentStatus.COMPLETED) {
+                order.getPayment().setStatus(PaymentStatus.REFUNDED);
+                if (order.getPaymentMethod() == com.example.pizzachaongon.enums.PaymentMethod.CASH
+                        && order.getShift() != null
+                        && order.getShift().getExpectedCash() != null) {
+                    order.getShift().setExpectedCash(
+                            order.getShift().getExpectedCash().subtract(order.getTotalAmount())
+                    );
+                }
+            }
+        } else {
+            order.setCompletedAt(LocalDateTime.now());
+        }
+
         order.setStatus(newStatus);
         Order savedOrder = orderRepository.save(order);
         return mapToResponse(savedOrder);
@@ -153,8 +195,11 @@ public class OrderService {
         res.setPaymentMethod(order.getPaymentMethod());
         res.setTotalAmount(order.getTotalAmount());
         res.setNote(order.getNote());
+        res.setCancelReason(order.getCancelReason());
         res.setCreatedBy(order.getCreatedBy().getFullName());
         res.setCreatedAt(order.getCreatedAt());
+        res.setCompletedAt(order.getCompletedAt());
+        res.setCancelledAt(order.getCancelledAt());
         res.setQueueNumber(order.getQueueNumber());
 
         if (order.getItems() != null) {

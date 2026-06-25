@@ -58,7 +58,14 @@ public class OrderController {
         if (newStatusStr == null) {
             throw new IllegalArgumentException("Trạng thái không được để trống");
         }
-        OrderStatus newStatus = OrderStatus.valueOf(newStatusStr);
-        return ResponseEntity.ok(orderService.updateOrderStatus(id, newStatus));
+        OrderStatus newStatus;
+        try {
+            newStatus = OrderStatus.valueOf(newStatusStr.toUpperCase());
+        } catch (IllegalArgumentException ex) {
+            throw new com.example.pizzachaongon.exception.BadRequestException(
+                    "Trạng thái đơn hàng không hợp lệ."
+            );
+        }
+        return ResponseEntity.ok(orderService.updateOrderStatus(id, newStatus, body.get("reason")));
     }
 }

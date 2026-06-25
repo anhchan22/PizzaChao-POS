@@ -18,8 +18,11 @@ public class OrderResponse {
     private PaymentMethod paymentMethod;
     private BigDecimal totalAmount;
     private String note;
+    private String cancelReason;
     private String createdBy;
     private LocalDateTime createdAt;
+    private LocalDateTime completedAt;
+    private LocalDateTime cancelledAt;
     private Integer queueNumber;
     private List<OrderItemResponse> items;
 }

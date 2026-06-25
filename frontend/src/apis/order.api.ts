@@ -45,14 +45,21 @@ export interface OrderResponse {
   orderCode: string
   customerName?: string
   customerPhone?: string
-  status: 'PENDING' | 'COMPLETED' | 'CANCELLED'
+  status: OrderStatus
   paymentMethod: 'CASH' | 'TRANSFER'
   totalAmount: number
   note?: string
+  cancelReason?: string
   createdBy: string
   createdAt: string
+  completedAt?: string
+  cancelledAt?: string
+  queueNumber: number
   items: OrderItemResponse[]
 }
+
+export type OrderStatus = 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'CANCELLED'
+export type OrderQueueFilter = 'UNFINISHED' | 'COMPLETED' | 'CANCELLED' | 'ALL'
 
 export interface OrderListResponse {
   content: OrderResponse[]
@@ -66,12 +73,12 @@ export const orderApi = {
   create: (data: OrderRequest) => 
     axiosInstance.post<OrderResponse>('/orders', data).then(res => res.data),
     
-  getAll: (params?: { keyword?: string; status?: string; page?: number; size?: number }) => 
+  getAll: (params?: { keyword?: string; status?: OrderQueueFilter; page?: number; size?: number }) =>
     axiosInstance.get<OrderListResponse>('/orders', { params }).then(res => res.data),
     
   getById: (id: number) => 
     axiosInstance.get<OrderResponse>(`/orders/${id}`).then(res => res.data),
     
-  updateStatus: (id: number, status: 'PENDING' | 'COMPLETED' | 'CANCELLED') => 
-    axiosInstance.patch<OrderResponse>(`/orders/${id}/status`, { status }).then(res => res.data),
+  updateStatus: (id: number, status: 'COMPLETED' | 'CANCELLED', reason?: string) =>
+    axiosInstance.patch<OrderResponse>(`/orders/${id}/status`, { status, reason }).then(res => res.data),
 }

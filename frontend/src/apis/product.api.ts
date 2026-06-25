@@ -27,6 +27,10 @@ export const sizeApi = {
 
 export const optionApi = {
   getAll: () => axiosInstance.get<ProductOption[]>('/options').then(res => res.data),
+  getPosOptions: () =>
+    axiosInstance
+      .get<{ data: ProductOption[] }>('/options/pos')
+      .then(res => res.data.data),
   create: (data: OptionRequest) => axiosInstance.post<ProductOption>('/options', data).then(res => res.data),
   update: (id: number, data: OptionRequest) => axiosInstance.put<ProductOption>(`/options/${id}`, data).then(res => res.data),
   delete: (id: number) => axiosInstance.delete(`/options/${id}`).then(res => res.data),

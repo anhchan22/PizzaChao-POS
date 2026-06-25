@@ -41,6 +41,8 @@ Roles: `OWNER`, `STAFF`
 ### POST /auth/logout
 **Đăng xuất**
 
+Rule: Người dùng phải đóng ca đang mở trước khi đăng xuất.
+
 ### GET /auth/me
 **Lấy thông tin user hiện tại**
 
@@ -227,30 +229,30 @@ Quản lý mở ca / đóng ca
 
 Body:
 ```json
-{ "openingCash": 500000, "openingNote": "Ca sáng" }
+{ "startingCash": 500000, "openingNote": "Ca sáng" }
 ```
 
 Rules:
-- Nhân viên phải mở ca trước khi bán
-- Một nhân viên không được có 2 ca OPEN cùng lúc
+- OWNER và STAFF đều phải mở ca trước khi bán
+- Mỗi tài khoản không được có 2 ca OPEN cùng lúc
+- Ca đang mở được xác định theo tài khoản đăng nhập, không dùng chung toàn cửa hàng
 
 ### GET /shifts/current
 **Lấy ca đang mở của user hiện tại**
 
 ### GET /shifts
-**OWNER xem danh sách ca**
+**OWNER xem lịch sử toàn bộ ca**
 
-Query: `?fromDate=2026-06-01&toDate=2026-06-22&userId=2&status=CLOSED`
+Query: `?fromDate=2026-06-01&toDate=2026-06-22&userId=2&status=CLOSED&page=0&size=20`
+
+Rules:
+- Chỉ OWNER được truy cập
+- STAFF không được xem lịch sử ca
 
 ### GET /shifts/{id}
-**Xem chi tiết ca**
+**OWNER xem chi tiết ca**
 
-### GET /shifts/{id}/summary
-**Lấy tổng kết ca**
-
-Response: `totalOrders`, `cancelledOrders`, `totalRevenue`, `cashRevenue`, `bankRevenue`, `totalExpense`, `totalRefund`, `openingCash`, `expectedCash`, `actualCash`, `cashDifference`
-
-### POST /shifts/{id}/close
+### POST /shifts/close
 **Đóng ca**
 
 Body:
@@ -259,16 +261,9 @@ Body:
 ```
 
 Rules:
+- Chỉ đóng ca OPEN của chính tài khoản đang đăng nhập
 - Nếu `actualCash` lệch `expectedCash` → bắt buộc nhập `closingNote`
 - Sau khi đóng ca không được tạo thêm đơn
-
-### PATCH /shifts/{id}/owner-confirm
-**Chủ xác nhận ca bán**
-
-Body:
-```json
-{ "ownerConfirmed": true, "note": "Đã kiểm tra" }
-```
 
 ---
 

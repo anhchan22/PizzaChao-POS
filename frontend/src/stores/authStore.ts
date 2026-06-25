@@ -9,13 +9,13 @@ interface AuthState {
   isLoading: boolean
 
   login: (username: string, password: string) => Promise<void>
-  logout: () => void
+  logout: () => Promise<void>
   fetchMe: () => Promise<void>
   setUser: (user: User) => void
   hydrate: () => void
 }
 
-export const useAuthStore = create<AuthState>((set, get) => ({
+export const useAuthStore = create<AuthState>((set) => ({
   token: null,
   user: null,
   isAuthenticated: false,
@@ -35,8 +35,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     })
   },
 
-  logout: () => {
-    authApi.logout().catch(() => {})
+  logout: async () => {
+    await authApi.logout()
     localStorage.removeItem('access_token')
     localStorage.removeItem('user')
 
@@ -54,7 +54,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       localStorage.setItem('user', JSON.stringify(user))
       set({ user, isAuthenticated: true })
     } catch {
-      get().logout()
+      localStorage.removeItem('access_token')
+      localStorage.removeItem('user')
+      set({
+        token: null,
+        user: null,
+        isAuthenticated: false,
+      })
     }
   },
 

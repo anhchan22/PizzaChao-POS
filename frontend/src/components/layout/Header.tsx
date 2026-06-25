@@ -1,6 +1,9 @@
-import { LogOut, User as UserIcon, KeyRound } from 'lucide-react'
+import { KeyRound, Loader2, LogOut, User as UserIcon } from 'lucide-react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'
 import { useAuthStore } from '@/stores/authStore'
+import { shiftApi } from '@/features/shift/api/shift.api'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import {
@@ -16,10 +19,37 @@ import { Badge } from '@/components/ui/badge'
 export function Header() {
   const { user, logout } = useAuthStore()
   const navigate = useNavigate()
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
 
-  const handleLogout = () => {
-    logout()
-    navigate('/login')
+  const handleLogout = async () => {
+    setIsLoggingOut(true)
+    try {
+      const currentShift = await shiftApi.getCurrentShift()
+      if (currentShift.data) {
+        toast.warning('Bạn đang có ca làm việc chưa đóng. Vui lòng đóng ca trước khi đăng xuất.')
+        navigate('/dashboard')
+        return
+      }
+
+      await logout()
+      navigate('/login', { replace: true })
+    } catch (error: unknown) {
+      const serverMessage = typeof error === 'object'
+        && error !== null
+        && 'response' in error
+        ? (error as { response?: { data?: { message?: string } } }).response?.data?.message
+        : null
+
+      const safeMessage = serverMessage
+        && !serverMessage.includes('No static resource')
+        && !serverMessage.startsWith('Lỗi hệ thống:')
+        ? serverMessage
+        : 'Không thể đăng xuất lúc này. Vui lòng thử lại.'
+
+      toast.error(safeMessage)
+    } finally {
+      setIsLoggingOut(false)
+    }
   }
 
   const initials = user?.fullName
@@ -80,9 +110,12 @@ export function Header() {
             <DropdownMenuItem
               className="gap-2 cursor-pointer text-destructive focus:text-destructive"
               onClick={handleLogout}
+              disabled={isLoggingOut}
             >
-              <LogOut className="h-4 w-4" />
-              Đăng xuất
+              {isLoggingOut
+                ? <Loader2 className="h-4 w-4 animate-spin" />
+                : <LogOut className="h-4 w-4" />}
+              {isLoggingOut ? 'Đang kiểm tra ca...' : 'Đăng xuất'}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

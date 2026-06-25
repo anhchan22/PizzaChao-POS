@@ -7,13 +7,17 @@ import com.example.pizzachaongon.entity.Shift;
 import com.example.pizzachaongon.entity.User;
 import com.example.pizzachaongon.enums.ShiftStatus;
 import com.example.pizzachaongon.exception.BadRequestException;
+import com.example.pizzachaongon.exception.ResourceNotFoundException;
 import com.example.pizzachaongon.repository.ShiftRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -23,34 +27,40 @@ public class ShiftService {
 
     @Transactional(readOnly = true)
     public ShiftResponse getCurrentShift() {
-        return shiftRepository.findByStatus(ShiftStatus.OPEN)
+        User currentUser = userService.getCurrentUser();
+        return shiftRepository.findByOpenedByIdAndStatus(currentUser.getId(), ShiftStatus.OPEN)
                 .map(this::mapToResponse)
                 .orElse(null);
     }
 
     @Transactional(readOnly = true)
     public Shift getActiveShiftEntity() {
-        return shiftRepository.findByStatus(ShiftStatus.OPEN)
-                .orElseThrow(() -> new BadRequestException("Không có ca làm việc nào đang mở. Vui lòng mở ca trước."));
+        User currentUser = userService.getCurrentUser();
+        return shiftRepository.findByOpenedByIdAndStatus(currentUser.getId(), ShiftStatus.OPEN)
+                .orElseThrow(() -> new BadRequestException(
+                        "Bạn chưa có ca làm việc đang mở. Vui lòng mở ca trước."
+                ));
     }
 
     @Transactional
     public ShiftResponse openShift(ShiftOpenRequest request) {
-        Optional<Shift> current = shiftRepository.findByStatus(ShiftStatus.OPEN);
-        if (current.isPresent()) {
-            throw new BadRequestException("Đã có một ca làm việc đang mở. Vui lòng đóng ca trước khi mở ca mới.");
+        User currentUser = userService.getCurrentUser();
+        if (shiftRepository.existsByOpenedByIdAndStatus(currentUser.getId(), ShiftStatus.OPEN)) {
+            throw new BadRequestException(
+                    "Bạn đã có một ca đang mở. Vui lòng đóng ca trước khi mở ca mới."
+            );
         }
 
-        User currentUser = userService.getCurrentUser();
         Shift shift = Shift.builder()
                 .openedBy(currentUser)
                 .openedAt(LocalDateTime.now())
                 .startingCash(request.getStartingCash())
+                .expectedCash(request.getStartingCash())
+                .openingNote(normalizeNote(request.getOpeningNote()))
                 .status(ShiftStatus.OPEN)
                 .build();
 
-        shift = shiftRepository.save(shift);
-        return mapToResponse(shift);
+        return mapToResponse(shiftRepository.save(shift));
     }
 
     @Transactional
@@ -61,25 +71,72 @@ public class ShiftService {
         shift.setClosedBy(currentUser);
         shift.setClosedAt(LocalDateTime.now());
         shift.setActualCash(request.getActualCash());
-        shift.setNote(request.getNote());
-        shift.setStatus(ShiftStatus.CLOSED);
+        if (shift.getExpectedCash() == null) {
+            shift.setExpectedCash(shift.getStartingCash());
+        }
+        shift.setCashDifference(request.getActualCash().subtract(shift.getExpectedCash()));
 
-        shift = shiftRepository.save(shift);
+        String closingNote = normalizeNote(request.getClosingNote());
+        if (shift.getCashDifference().signum() != 0 && !StringUtils.hasText(closingNote)) {
+            throw new BadRequestException(
+                    "Tiền cuối ca bị lệch. Vui lòng nhập lý do chênh lệch."
+            );
+        }
+
+        shift.setClosingNote(closingNote);
+        shift.setStatus(ShiftStatus.CLOSED);
+        return mapToResponse(shiftRepository.save(shift));
+    }
+
+    @Transactional(readOnly = true)
+    public Page<ShiftResponse> getHistory(
+            Long userId,
+            ShiftStatus status,
+            LocalDate fromDate,
+            LocalDate toDate,
+            Pageable pageable
+    ) {
+        if (fromDate != null && toDate != null && fromDate.isAfter(toDate)) {
+            throw new BadRequestException("Ngày bắt đầu không được sau ngày kết thúc.");
+        }
+
+        LocalDateTime from = fromDate != null ? fromDate.atStartOfDay() : null;
+        LocalDateTime toExclusive = toDate != null ? toDate.plusDays(1).atStartOfDay() : null;
+        return shiftRepository.findHistory(userId, status, from, toExclusive, pageable)
+                .map(this::mapToResponse);
+    }
+
+    @Transactional(readOnly = true)
+    public ShiftResponse getById(Long id) {
+        Shift shift = shiftRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Không tìm thấy ca làm việc với id: " + id
+                ));
         return mapToResponse(shift);
     }
 
     public ShiftResponse mapToResponse(Shift shift) {
+        var expectedCash = shift.getExpectedCash() != null
+                ? shift.getExpectedCash()
+                : shift.getStartingCash();
         return ShiftResponse.builder()
                 .id(shift.getId())
+                .openedById(shift.getOpenedBy().getId())
                 .openedByName(shift.getOpenedBy().getFullName())
                 .closedByName(shift.getClosedBy() != null ? shift.getClosedBy().getFullName() : null)
                 .openedAt(shift.getOpenedAt())
                 .closedAt(shift.getClosedAt())
                 .startingCash(shift.getStartingCash())
-                .expectedCash(shift.getExpectedCash())
+                .expectedCash(expectedCash)
                 .actualCash(shift.getActualCash())
-                .note(shift.getNote())
+                .cashDifference(shift.getCashDifference())
+                .openingNote(shift.getOpeningNote())
+                .closingNote(shift.getClosingNote())
                 .status(shift.getStatus())
                 .build();
+    }
+
+    private String normalizeNote(String note) {
+        return StringUtils.hasText(note) ? note.trim() : null;
     }
 }

@@ -103,8 +103,10 @@ public class OrderService {
 
         // Cộng dồn vào expectedCash của Shift nếu là Tiền mặt
         if (request.getPaymentMethod() == com.example.pizzachaongon.enums.PaymentMethod.CASH) {
-            Double currentExpected = currentShift.getExpectedCash() != null ? currentShift.getExpectedCash() : currentShift.getStartingCash();
-            currentShift.setExpectedCash(currentExpected + totalOrderAmount.doubleValue());
+            BigDecimal currentExpected = currentShift.getExpectedCash() != null
+                    ? currentShift.getExpectedCash()
+                    : currentShift.getStartingCash();
+            currentShift.setExpectedCash(currentExpected.add(totalOrderAmount));
         }
 
         Order savedOrder = orderRepository.save(order);

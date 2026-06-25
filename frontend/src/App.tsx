@@ -16,6 +16,7 @@ import ProductManagementPage from "@/features/products/ProductManagementPage";
 import PosPage from "@/features/pos/PosPage";
 import OrderHistoryPage from "@/features/orders/OrderHistoryPage";
 import SettingsPage from "@/features/settings/SettingsPage";
+import { ShiftHistoryPage } from "@/features/shift/ShiftHistoryPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -49,6 +50,10 @@ function AppRoutes() {
         <Route path="/pos" element={<PosPage />} />
         <Route path="/admin/orders" element={<OrderHistoryPage />} />
         <Route path="/admin/settings" element={<SettingsPage />} />
+        <Route
+          path="/admin/shifts"
+          element={<ProtectedRoute roles={['OWNER']}><ShiftHistoryPage /></ProtectedRoute>}
+        />
       </Route>
 
       {/* Fallback */}

@@ -1,187 +1,197 @@
-import { useState, useMemo } from 'react'
-import { TrendingUp, ShoppingCart, Users, DollarSign, Store, Loader2, ArrowRight } from 'lucide-react'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card'
+import { useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { ArrowRight, DollarSign, Loader2, ShoppingCart, Store, TrendingUp, Users } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { toast } from 'sonner'
-import { useQuery } from '@tanstack/react-query'
+import { Textarea } from '@/components/ui/textarea'
 import { shiftApi } from '@/features/shift/api/shift.api'
-import type { Shift } from '@/features/shift/types/shift.types'
 import { useAuthStore } from '@/stores/authStore'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog'
-import { useNavigate } from 'react-router-dom'
+
+const currency = new Intl.NumberFormat('vi-VN', {
+  style: 'currency',
+  currency: 'VND',
+  maximumFractionDigits: 0,
+})
 
 const statCards = [
-  {
-    title: 'Doanh thu hôm nay',
-    value: '—',
-    description: 'Sẽ hiện khi có dữ liệu',
-    icon: DollarSign,
-    color: 'text-emerald-500',
-    bgColor: 'bg-emerald-500/10',
-  },
-  {
-    title: 'Đơn hàng hôm nay',
-    value: '—',
-    description: 'Sẽ hiện khi có dữ liệu',
-    icon: ShoppingCart,
-    color: 'text-blue-500',
-    bgColor: 'bg-blue-500/10',
-  },
-  {
-    title: 'Nhân viên',
-    value: '—',
-    description: 'Sẽ hiện khi có dữ liệu',
-    icon: Users,
-    color: 'text-violet-500',
-    bgColor: 'bg-violet-500/10',
-  },
-  {
-    title: 'Tăng trưởng',
-    value: '—',
-    description: 'Sẽ hiện khi có dữ liệu',
-    icon: TrendingUp,
-    color: 'text-amber-500',
-    bgColor: 'bg-amber-500/10',
-  },
+  { title: 'Doanh thu hôm nay', icon: DollarSign, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+  { title: 'Đơn hàng hôm nay', icon: ShoppingCart, color: 'text-blue-500', bg: 'bg-blue-500/10' },
+  { title: 'Nhân viên', icon: Users, color: 'text-violet-500', bg: 'bg-violet-500/10' },
+  { title: 'Tăng trưởng', icon: TrendingUp, color: 'text-amber-500', bg: 'bg-amber-500/10' },
 ]
 
+function getErrorMessage(error: unknown, fallback: string) {
+  if (typeof error === 'object' && error !== null && 'response' in error) {
+    const response = (error as { response?: { data?: { message?: string } } }).response
+    return response?.data?.message ?? fallback
+  }
+  return fallback
+}
+
 export function DashboardPage() {
-  const user = useAuthStore((s) => s.user)
+  const user = useAuthStore((state) => state.user)
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
+  const [openDialog, setOpenDialog] = useState(false)
+  const [closeDialog, setCloseDialog] = useState(false)
+  const [startingCash, setStartingCash] = useState('')
+  const [actualCash, setActualCash] = useState('')
+  const [openingNote, setOpeningNote] = useState('')
+  const [closingNote, setClosingNote] = useState('')
 
-  // Shift Management State
-  const [activeShift, setActiveShift] = useState<Shift | null>(null)
-  
-  const [shiftModalOpen, setShiftModalOpen] = useState(false)
-  const [startCash, setStartCash] = useState<number>(0)
-  const [isOpeningShift, setIsOpeningShift] = useState(false)
-
-  const [closeShiftModalOpen, setCloseShiftModalOpen] = useState(false)
-  const [endCash, setEndCash] = useState<number>(0)
-  const [isClosingShift, setIsClosingShift] = useState(false)
-
-  const { data: shiftData, isError: isShiftError, refetch: refetchShift } = useQuery({
+  const currentShiftQuery = useQuery({
     queryKey: ['current-shift'],
     queryFn: shiftApi.getCurrentShift,
-    retry: false
+    retry: false,
   })
 
-  useMemo(() => {
-    if (shiftData?.data) {
-      setActiveShift(shiftData.data)
-    } else if (isShiftError) {
-      setActiveShift(null)
-    }
-  }, [shiftData, isShiftError])
+  const activeShift = currentShiftQuery.data?.data ?? null
+  const parsedStartingCash = Number(startingCash)
+  const parsedActualCash = Number(actualCash)
+  const cashDifference = activeShift && Number.isFinite(parsedActualCash)
+    ? parsedActualCash - activeShift.expectedCash
+    : 0
 
-  const handleOpenShift = async () => {
-    setIsOpeningShift(true)
-    try {
-      const res = await shiftApi.openShift({ startingCash: startCash })
-      setActiveShift(res.data)
-      setShiftModalOpen(false)
-      toast.success('Mở ca thành công!')
-      refetchShift()
-    } catch (error: any) {
-      toast.error(error?.response?.data?.message || 'Không thể mở ca')
-    } finally {
-      setIsOpeningShift(false)
+  const openShiftMutation = useMutation({
+    mutationFn: shiftApi.openShift,
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['current-shift'] })
+      setOpenDialog(false)
+      setStartingCash('')
+      setOpeningNote('')
+      toast.success('Mở ca thành công')
+    },
+    onError: (error) => toast.error(getErrorMessage(error, 'Không thể mở ca')),
+  })
+
+  const closeShiftMutation = useMutation({
+    mutationFn: shiftApi.closeShift,
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['current-shift'] })
+      await queryClient.invalidateQueries({ queryKey: ['shift-history'] })
+      setCloseDialog(false)
+      setActualCash('')
+      setClosingNote('')
+      toast.success('Đóng ca thành công')
+    },
+    onError: (error) => toast.error(getErrorMessage(error, 'Không thể đóng ca')),
+  })
+
+  const handleOpenShift = () => {
+    if (!startingCash || !Number.isFinite(parsedStartingCash) || parsedStartingCash < 0) {
+      toast.error('Vui lòng nhập tiền đầu ca hợp lệ')
+      return
     }
+    openShiftMutation.mutate({
+      startingCash: parsedStartingCash,
+      openingNote: openingNote.trim() || undefined,
+    })
   }
 
-  const handleCloseShift = async () => {
-    setIsClosingShift(true)
-    try {
-      await shiftApi.closeShift({ actualCash: endCash })
-      setActiveShift(null)
-      setCloseShiftModalOpen(false)
-      toast.success('Đóng ca thành công!')
-    } catch (error: any) {
-      toast.error(error?.response?.data?.message || 'Không thể đóng ca')
-    } finally {
-      setIsClosingShift(false)
+  const handleCloseShift = () => {
+    if (!actualCash || !Number.isFinite(parsedActualCash) || parsedActualCash < 0) {
+      toast.error('Vui lòng nhập tiền cuối ca hợp lệ')
+      return
     }
+    if (cashDifference !== 0 && !closingNote.trim()) {
+      toast.error('Vui lòng nhập lý do khi tiền cuối ca bị chênh lệch')
+      return
+    }
+    closeShiftMutation.mutate({
+      actualCash: parsedActualCash,
+      closingNote: closingNote.trim() || undefined,
+    })
   }
 
   return (
     <div className="space-y-6">
-      {/* Welcome */}
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">
-          Xin chào, {user?.fullName} 👋
-        </h1>
-        <p className="mt-1 text-muted-foreground">
-          Tổng quan hoạt động cửa hàng hôm nay
-        </p>
+        <h1 className="text-2xl font-bold tracking-tight">Xin chào, {user?.fullName}</h1>
+        <p className="mt-1 text-muted-foreground">Tổng quan hoạt động cửa hàng hôm nay</p>
       </div>
 
-      {/* Shift Management Section */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <Card className="border-border/50 border-primary/20 shadow-sm bg-primary/5">
+        <Card className="border-primary/20 bg-primary/5 shadow-sm">
           <CardHeader className="pb-3">
-            <CardTitle className="text-lg flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-lg">
               <Store className="h-5 w-5 text-primary" />
-              Ca làm việc
+              Ca làm việc của bạn
             </CardTitle>
             <CardDescription>
-              {activeShift ? 'Bạn đang trong ca làm việc' : 'Chưa có ca làm việc nào được mở'}
+              {activeShift ? 'Ca đang mở và sẵn sàng bán hàng' : 'Bạn chưa mở ca làm việc'}
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {activeShift ? (
+            {currentShiftQuery.isLoading ? (
+              <div className="flex items-center gap-2 py-4 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Đang kiểm tra ca làm việc...
+              </div>
+            ) : currentShiftQuery.isError ? (
+              <div className="space-y-3 py-2">
+                <p className="text-sm text-destructive">Không thể tải thông tin ca làm việc.</p>
+                <Button variant="outline" size="sm" onClick={() => currentShiftQuery.refetch()}>
+                  Thử lại
+                </Button>
+              </div>
+            ) : activeShift ? (
               <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Thu ngân:</span>
+                <div className="flex justify-between gap-4">
+                  <span className="text-muted-foreground">Người mở ca</span>
                   <span className="font-medium">{activeShift.openedByName}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Giờ mở ca:</span>
-                  <span className="font-medium">{new Date(activeShift.openedAt).toLocaleTimeString('vi-VN')}</span>
+                <div className="flex justify-between gap-4">
+                  <span className="text-muted-foreground">Thời gian mở</span>
+                  <span className="font-medium">{new Date(activeShift.openedAt).toLocaleString('vi-VN')}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Tiền mặt đầu ca:</span>
-                  <span className="font-medium">{activeShift.startingCash.toLocaleString('vi-VN')}đ</span>
+                <div className="flex justify-between gap-4">
+                  <span className="text-muted-foreground">Tiền đầu ca</span>
+                  <span className="font-medium">{currency.format(activeShift.startingCash)}</span>
                 </div>
+                <div className="flex justify-between gap-4">
+                  <span className="text-muted-foreground">Tiền dự kiến</span>
+                  <span className="font-semibold text-primary">{currency.format(activeShift.expectedCash)}</span>
+                </div>
+                {activeShift.openingNote && (
+                  <p className="rounded-md bg-muted p-2 text-muted-foreground">{activeShift.openingNote}</p>
+                )}
               </div>
             ) : (
-              <div className="py-2">
-                <p className="text-sm text-muted-foreground">Vui lòng mở ca để có thể sử dụng máy POS và tạo đơn hàng.</p>
-              </div>
+              <p className="py-2 text-sm text-muted-foreground">
+                Mở ca và nhập tiền mặt đầu ca trước khi sử dụng máy POS.
+              </p>
             )}
           </CardContent>
           <CardFooter className="pt-2">
             {activeShift ? (
-              <div className="flex gap-2 w-full">
-                <Button 
-                  className="flex-1" 
-                  onClick={() => navigate('/pos')}
-                >
+              <div className="flex w-full gap-2">
+                <Button className="flex-1" onClick={() => navigate('/pos')}>
                   Vào máy POS <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
-                <Button 
-                  variant="destructive" 
+                <Button
+                  variant="destructive"
                   onClick={() => {
-                    setEndCash(0)
-                    setCloseShiftModalOpen(true)
+                    setActualCash('')
+                    setClosingNote('')
+                    setCloseDialog(true)
                   }}
                 >
                   Đóng ca
                 </Button>
               </div>
             ) : (
-              <Button 
-                className="w-full" 
+              <Button
+                className="w-full"
+                disabled={currentShiftQuery.isLoading || currentShiftQuery.isError}
                 onClick={() => {
-                  setStartCash(0)
-                  setShiftModalOpen(true)
+                  setStartingCash('')
+                  setOpeningNote('')
+                  setOpenDialog(true)
                 }}
               >
                 Mở ca bán hàng
@@ -191,117 +201,112 @@ export function DashboardPage() {
         </Card>
       </div>
 
-      {/* Stats Grid */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {statCards.map((card) => {
-          const Icon = card.icon
-          return (
-            <Card key={card.title} className="border-border/50 transition-shadow hover:shadow-lg">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  {card.title}
-                </CardTitle>
-                <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${card.bgColor}`}>
-                  <Icon className={`h-5 w-5 ${card.color}`} />
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{card.value}</div>
-                <p className="mt-1 text-xs text-muted-foreground">{card.description}</p>
-              </CardContent>
-            </Card>
-          )
-        })}
+        {statCards.map(({ title, icon: Icon, color, bg }) => (
+          <Card key={title} className="border-border/50">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
+              <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${bg}`}>
+                <Icon className={`h-5 w-5 ${color}`} />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">—</div>
+              <p className="mt-1 text-xs text-muted-foreground">Sẽ cập nhật ở module báo cáo</p>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
-      {/* Placeholder content */}
-      <Card className="border-border/50 border-dashed">
-        <CardContent className="flex min-h-[200px] items-center justify-center">
-          <div className="text-center">
-            <p className="text-lg font-medium text-muted-foreground">
-              📊 Biểu đồ doanh thu sẽ hiện ở Phase 6
-            </p>
-            <p className="mt-1 text-sm text-muted-foreground/60">
-              Hoàn thành các phase trước để có dữ liệu dashboard
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Modals for Shift Management */}
-      <Dialog open={shiftModalOpen} onOpenChange={setShiftModalOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle className="text-xl text-center">Mở Ca Làm Việc</DialogTitle>
-          </DialogHeader>
-          <div className="py-6 space-y-4">
-            <div className="text-center text-muted-foreground">
-              Nhập số tiền mặt hiện có trong két để bắt đầu ca bán hàng mới.
+      <Dialog open={openDialog} onOpenChange={setOpenDialog}>
+        <DialogContent className="sm:max-w-[440px]">
+          <DialogHeader><DialogTitle>Mở ca làm việc</DialogTitle></DialogHeader>
+          <div className="space-y-4 py-3">
+            <div className="space-y-2">
+              <Label htmlFor="startingCash">Tiền mặt đầu ca (VNĐ)</Label>
+              <Input
+                id="startingCash"
+                type="number"
+                min="0"
+                step="1000"
+                value={startingCash}
+                onChange={(event) => setStartingCash(event.target.value)}
+                placeholder="Ví dụ: 500000"
+              />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="startCash">Tiền mặt đầu ca (VNĐ)</Label>
-              <Input
-                id="startCash"
-                type="number"
-                value={startCash}
-                onChange={(e) => setStartCash(Number(e.target.value))}
-                placeholder="VD: 1000000"
+              <Label htmlFor="openingNote">Ghi chú đầu ca</Label>
+              <Textarea
+                id="openingNote"
+                maxLength={500}
+                value={openingNote}
+                onChange={(event) => setOpeningNote(event.target.value)}
+                placeholder="Tùy chọn"
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShiftModalOpen(false)}>Hủy</Button>
-            <Button 
-              className="w-full" 
-              onClick={handleOpenShift}
-              disabled={isOpeningShift || startCash < 0}
-            >
-              {isOpeningShift ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              Xác Nhận Mở Ca
+            <Button variant="outline" onClick={() => setOpenDialog(false)}>Hủy</Button>
+            <Button onClick={handleOpenShift} disabled={openShiftMutation.isPending}>
+              {openShiftMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Xác nhận mở ca
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      <Dialog open={closeShiftModalOpen} onOpenChange={setCloseShiftModalOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle className="text-xl text-center">Đóng Ca Bàn Giao</DialogTitle>
-          </DialogHeader>
-          <div className="py-4 space-y-4">
-            <div className="bg-muted p-4 rounded-lg space-y-2 text-sm">
+      <Dialog open={closeDialog} onOpenChange={setCloseDialog}>
+        <DialogContent className="sm:max-w-[480px]">
+          <DialogHeader><DialogTitle>Đóng ca và đối soát tiền</DialogTitle></DialogHeader>
+          <div className="space-y-4 py-3">
+            <div className="rounded-lg bg-muted p-4 text-sm">
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Thu ngân:</span>
-                <span className="font-semibold">{activeShift?.openedByName}</span>
+                <span className="text-muted-foreground">Tiền đầu ca</span>
+                <span className="font-medium">{currency.format(activeShift?.startingCash ?? 0)}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Tiền mặt đầu ca:</span>
-                <span className="font-semibold">{activeShift?.startingCash?.toLocaleString('vi-VN')}đ</span>
+              <div className="mt-2 flex justify-between">
+                <span className="text-muted-foreground">Tiền dự kiến</span>
+                <span className="font-semibold">{currency.format(activeShift?.expectedCash ?? 0)}</span>
               </div>
             </div>
-            <div className="space-y-2 pt-2">
-              <Label htmlFor="endCash">Tiền mặt thực tế trong két (VNĐ)</Label>
+            <div className="space-y-2">
+              <Label htmlFor="actualCash">Tiền mặt thực tế cuối ca (VNĐ)</Label>
               <Input
-                id="endCash"
+                id="actualCash"
                 type="number"
-                value={endCash}
-                onChange={(e) => setEndCash(Number(e.target.value))}
-                placeholder="VD: 5000000"
+                min="0"
+                step="1000"
+                value={actualCash}
+                onChange={(event) => setActualCash(event.target.value)}
+                placeholder="Nhập số tiền đã đếm trong két"
               />
-              <p className="text-xs text-muted-foreground">
-                Vui lòng đếm lại tiền mặt trong két và nhập chính xác số tiền hiện có.
-              </p>
+            </div>
+            {actualCash && Number.isFinite(parsedActualCash) && (
+              <div className={`rounded-lg border p-3 text-sm ${cashDifference === 0 ? 'border-emerald-500/30 bg-emerald-500/10' : 'border-amber-500/30 bg-amber-500/10'}`}>
+                <div className="flex justify-between">
+                  <span>Chênh lệch</span>
+                  <span className="font-semibold">{currency.format(cashDifference)}</span>
+                </div>
+              </div>
+            )}
+            <div className="space-y-2">
+              <Label htmlFor="closingNote">
+                Ghi chú đóng ca {cashDifference !== 0 ? '(bắt buộc khi có chênh lệch)' : ''}
+              </Label>
+              <Textarea
+                id="closingNote"
+                maxLength={500}
+                value={closingNote}
+                onChange={(event) => setClosingNote(event.target.value)}
+                placeholder="Nêu lý do thừa/thiếu tiền nếu có"
+              />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setCloseShiftModalOpen(false)}>Hủy</Button>
-            <Button 
-              variant="destructive"
-              onClick={handleCloseShift}
-              disabled={isClosingShift || endCash < 0}
-            >
-              {isClosingShift ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              Xác Nhận Đóng Ca
+            <Button variant="outline" onClick={() => setCloseDialog(false)}>Hủy</Button>
+            <Button variant="destructive" onClick={handleCloseShift} disabled={closeShiftMutation.isPending}>
+              {closeShiftMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Xác nhận đóng ca
             </Button>
           </DialogFooter>
         </DialogContent>

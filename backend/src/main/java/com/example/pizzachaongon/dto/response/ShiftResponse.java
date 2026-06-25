@@ -4,19 +4,23 @@ import com.example.pizzachaongon.enums.ShiftStatus;
 import lombok.Builder;
 import lombok.Data;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
 @Builder
 public class ShiftResponse {
     private Long id;
+    private Long openedById;
     private String openedByName;
     private String closedByName;
     private LocalDateTime openedAt;
     private LocalDateTime closedAt;
-    private Double startingCash;
-    private Double expectedCash;
-    private Double actualCash;
-    private String note;
+    private BigDecimal startingCash;
+    private BigDecimal expectedCash;
+    private BigDecimal actualCash;
+    private BigDecimal cashDifference;
+    private String openingNote;
+    private String closingNote;
     private ShiftStatus status;
 }

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { Soup, Eye, EyeOff, Loader2 } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 import { Button } from '@/components/ui/button'
@@ -16,9 +16,6 @@ export function LoginPage() {
 
   const login = useAuthStore((s) => s.login)
   const navigate = useNavigate()
-  const location = useLocation()
-
-  const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/dashboard'
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -27,7 +24,7 @@ export function LoginPage() {
 
     try {
       await login(username, password)
-      navigate(from, { replace: true })
+      navigate('/dashboard', { replace: true })
     } catch (err: any) {
       const msg = err?.response?.data?.message || 'Đăng nhập thất bại. Vui lòng thử lại.'
       setError(msg)

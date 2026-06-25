@@ -1,21 +1,46 @@
+export type ShiftStatus = 'OPEN' | 'CLOSED'
+
 export interface Shift {
-    id: number;
-    openedByName: string;
-    closedByName: string | null;
-    openedAt: string;
-    closedAt: string | null;
-    startingCash: number;
-    expectedCash: number | null;
-    actualCash: number | null;
-    note: string | null;
-    status: 'OPEN' | 'CLOSED';
+  id: number
+  openedById: number
+  openedByName: string
+  closedByName: string | null
+  openedAt: string
+  closedAt: string | null
+  startingCash: number
+  expectedCash: number
+  actualCash: number | null
+  cashDifference: number | null
+  openingNote: string | null
+  closingNote: string | null
+  status: ShiftStatus
 }
 
 export interface ShiftOpenRequest {
-    startingCash: number;
+  startingCash: number
+  openingNote?: string
 }
 
 export interface ShiftCloseRequest {
-    actualCash: number;
-    note?: string;
+  actualCash: number
+  closingNote?: string
+}
+
+export interface ShiftHistoryParams {
+  userId?: number
+  status?: ShiftStatus
+  fromDate?: string
+  toDate?: string
+  page?: number
+  size?: number
+}
+
+export interface PageResponse<T> {
+  content: T[]
+  totalElements: number
+  totalPages: number
+  number: number
+  size: number
+  first: boolean
+  last: boolean
 }

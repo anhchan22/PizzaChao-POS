@@ -8,6 +8,8 @@ import com.example.pizzachaongon.dto.response.UserResponse;
 import com.example.pizzachaongon.mapper.UserMapper;
 import com.example.pizzachaongon.repository.UserRepository;
 import com.example.pizzachaongon.service.AuthService;
+import com.example.pizzachaongon.service.ShiftService;
+import com.example.pizzachaongon.exception.BadRequestException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -23,6 +25,7 @@ public class AuthController {
     private final AuthService authService;
     private final UserRepository userRepository;
     private final UserMapper userMapper;
+    private final ShiftService shiftService;
 
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<LoginResponse>> login(@Valid @RequestBody LoginRequest request) {
@@ -32,7 +35,9 @@ public class AuthController {
 
     @PostMapping("/logout")
     public ResponseEntity<ApiResponse<Void>> logout() {
-        // Stateless JWT: client removes token on logout
+        if (shiftService.getCurrentShift() != null) {
+            throw new BadRequestException("Bạn phải đóng ca làm việc trước khi đăng xuất.");
+        }
         return ResponseEntity.ok(ApiResponse.success("Đăng xuất thành công", null));
     }
 

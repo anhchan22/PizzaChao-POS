@@ -1,185 +1,222 @@
-import { useState, useMemo, useEffect } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { productApi, optionApi } from '@/apis/product.api'
-import type { PosProduct, ProductOption } from '@/types'
-import { useCartStore } from '@/stores/cartStore'
-import { Loader2, Minus, Plus, ShoppingCart, Trash2, Search } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Badge } from '@/components/ui/badge'
+import { useEffect, useMemo, useState } from 'react'
+import { useMutation, useQuery } from '@tanstack/react-query'
+import {
+  Check,
+  ChevronRight,
+  Loader2,
+  Minus,
+  Plus,
+  Search,
+  ShoppingCart,
+  Trash2,
+  Utensils,
+} from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
+import { orderApi, type OrderRequest } from '@/apis/order.api'
+import { optionApi, productApi } from '@/apis/product.api'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from '@/components/ui/dialog'
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import { Checkbox } from '@/components/ui/checkbox'
-import { orderApi } from '@/apis/order.api'
-import type { OrderRequest } from '@/apis/order.api'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { cn } from '@/lib/utils'
+import { useCartStore } from '@/stores/cartStore'
+import type { PosProduct, ProductOption } from '@/types'
 import { shiftApi } from '../shift/api/shift.api'
-import { settingApi } from '../settings/api/setting.api'
-import type { Shift } from '../shift/types/shift.types'
-import type { Setting } from '../settings/types/setting.types'
-import { useNavigate } from 'react-router-dom'
 
-// Modal Component cho việc chọn Size và Topping
-function ProductCustomizationModal({
+const currency = new Intl.NumberFormat('vi-VN', {
+  style: 'currency',
+  currency: 'VND',
+  maximumFractionDigits: 0,
+})
+
+function ProductCustomizationDialog({
   product,
+  options,
   open,
   onOpenChange,
-  options: allOptions,
 }: {
   product: PosProduct | null
+  options: ProductOption[]
   open: boolean
   onOpenChange: (open: boolean) => void
-  options: ProductOption[]
 }) {
-  const addItem = useCartStore(state => state.addItem)
-
+  const addItem = useCartStore((state) => state.addItem)
   const [selectedSizeId, setSelectedSizeId] = useState<number | null>(null)
   const [selectedOptionIds, setSelectedOptionIds] = useState<number[]>([])
   const [quantity, setQuantity] = useState(1)
   const [note, setNote] = useState('')
 
-  // Khi modal mở với sản phẩm mới, tự động chọn size đầu tiên
-  useMemo(() => {
-    if (open && product) {
-      if (product.variants.length > 0) {
-        setSelectedSizeId(product.variants[0].size.id)
-      }
-      setSelectedOptionIds([])
-      setQuantity(1)
-      setNote('')
-    }
+  useEffect(() => {
+    if (!open || !product) return
+    setSelectedSizeId(product.variants[0]?.size.id ?? null)
+    setSelectedOptionIds([])
+    setQuantity(1)
+    setNote('')
   }, [open, product])
 
   if (!product) return null
 
-  const handleAddToCart = () => {
-    if (!selectedSizeId) {
+  const selectedVariant = product.variants.find((variant) => variant.size.id === selectedSizeId)
+  const selectedOptions = options.filter((option) => selectedOptionIds.includes(option.id))
+  const optionPrice = selectedOptions.reduce((sum, option) => sum + option.price, 0)
+  const total = ((selectedVariant?.price ?? 0) + optionPrice) * quantity
+
+  const toggleOption = (optionId: number) => {
+    setSelectedOptionIds((current) =>
+      current.includes(optionId)
+        ? current.filter((id) => id !== optionId)
+        : [...current, optionId],
+    )
+  }
+
+  const handleAdd = () => {
+    if (!selectedVariant) {
       toast.error('Vui lòng chọn kích cỡ')
       return
     }
 
-    const variant = product.variants.find(v => v.size.id === selectedSizeId)
-    if (!variant) return
-
-    const selectedOptions = allOptions
-      .filter(o => selectedOptionIds.includes(o.id))
-      .map(o => ({
-        optionId: o.id,
-        optionName: o.name,
-        price: o.price
-      }))
-
     addItem({
       productId: product.id,
       productName: product.name,
-      sizeId: variant.size.id,
-      sizeName: variant.size.name,
-      unitPrice: variant.price,
+      sizeId: selectedVariant.size.id,
+      sizeName: selectedVariant.size.name,
+      unitPrice: selectedVariant.price,
       quantity,
-      note,
-      options: selectedOptions
+      note: note.trim() || undefined,
+      options: selectedOptions.map((option) => ({
+        optionId: option.id,
+        optionName: option.name,
+        price: option.price,
+      })),
     })
-
-    toast.success(`Đã thêm ${product.name} vào giỏ`)
+    toast.success(`Đã thêm ${product.name}`)
     onOpenChange(false)
   }
 
-  const selectedVariant = product.variants.find(v => v.size.id === selectedSizeId)
-  const basePrice = selectedVariant?.price || 0
-  const optionsPrice = allOptions
-    .filter(o => selectedOptionIds.includes(o.id))
-    .reduce((sum, o) => sum + o.price, 0)
-  
-  const totalPrice = (basePrice + optionsPrice) * quantity
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-[620px]">
         <DialogHeader>
-          <DialogTitle className="text-xl">{product.name}</DialogTitle>
+          <DialogTitle className="text-2xl">{product.name}</DialogTitle>
         </DialogHeader>
-        
-        <div className="space-y-6 py-4">
-          {/* Sizes */}
-          <div className="space-y-3">
-            <Label className="text-base font-semibold">Chọn kích cỡ <span className="text-destructive">*</span></Label>
-            <RadioGroup 
-              value={selectedSizeId?.toString()} 
-              onValueChange={(val) => setSelectedSizeId(Number(val))}
-              className="grid grid-cols-2 gap-3"
-            >
-              {product.variants.map((v) => (
-                <div key={v.id} className="flex items-center space-x-2 border p-3 rounded-lg hover:bg-muted/50 transition-colors">
-                  <RadioGroupItem value={v.size.id.toString()} id={`size-${v.id}`} />
-                  <Label htmlFor={`size-${v.id}`} className="flex-1 cursor-pointer flex justify-between">
-                    <span>{v.size.name}</span>
-                    <span className="font-semibold">{v.price.toLocaleString('vi-VN')}đ</span>
-                  </Label>
-                </div>
-              ))}
-            </RadioGroup>
-          </div>
 
-          {/* Options (Toppings) */}
-          {allOptions.length > 0 && (
-            <div className="space-y-3">
-              <Label className="text-base font-semibold">Topping (Tuỳ chọn)</Label>
-              <div className="grid grid-cols-2 gap-3">
-                {allOptions.map(opt => (
-                  <div key={opt.id} className="flex items-center space-x-2 border p-3 rounded-lg hover:bg-muted/50 transition-colors">
-                    <Checkbox 
-                      id={`opt-${opt.id}`} 
-                      checked={selectedOptionIds.includes(opt.id)}
-                      onCheckedChange={(checked) => {
-                        if (checked) setSelectedOptionIds(p => [...p, opt.id])
-                        else setSelectedOptionIds(p => p.filter(id => id !== opt.id))
-                      }}
-                    />
-                    <Label htmlFor={`opt-${opt.id}`} className="flex-1 cursor-pointer flex justify-between">
-                      <span>{opt.name}</span>
-                      <span className="text-muted-foreground">+{opt.price.toLocaleString('vi-VN')}đ</span>
-                    </Label>
-                  </div>
-                ))}
-              </div>
+        <div className="space-y-7 py-2">
+          <section className="space-y-3">
+            <div>
+              <Label className="text-base font-bold">Chọn kích cỡ</Label>
+              <p className="text-sm text-muted-foreground">Chạm vào toàn bộ ô để chọn size.</p>
             </div>
-          )}
+            <div className="grid gap-3 sm:grid-cols-3">
+              {product.variants.map((variant) => {
+                const selected = variant.size.id === selectedSizeId
+                return (
+                  <button
+                    type="button"
+                    key={variant.id}
+                    onClick={() => setSelectedSizeId(variant.size.id)}
+                    className={cn(
+                      'relative min-h-24 cursor-pointer rounded-xl border-2 p-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                      selected
+                        ? 'border-primary bg-primary text-primary-foreground shadow-lg'
+                        : 'border-border bg-card hover:border-primary/60 hover:bg-primary/5',
+                    )}
+                  >
+                    {selected && (
+                      <span className="absolute right-3 top-3 rounded-full bg-primary-foreground/20 p-1">
+                        <Check className="h-4 w-4" />
+                      </span>
+                    )}
+                    <p className="text-lg font-bold">{variant.size.name}</p>
+                    <p className={cn('mt-2 font-semibold', !selected && 'text-primary')}>
+                      {currency.format(variant.price)}
+                    </p>
+                  </button>
+                )
+              })}
+            </div>
+          </section>
 
-          {/* Note */}
-          <div className="space-y-3">
-            <Label className="text-base font-semibold">Ghi chú cho món này</Label>
-            <Input 
-              placeholder="VD: Ít đá, không hành..." 
+          <section className="space-y-3">
+            <div>
+              <Label className="text-base font-bold">Topping và tùy chọn</Label>
+              <p className="text-sm text-muted-foreground">Có thể chọn nhiều mục.</p>
+            </div>
+            {options.length === 0 ? (
+              <p className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
+                Chưa có topping đang hoạt động.
+              </p>
+            ) : (
+              <div className="grid gap-3 sm:grid-cols-2">
+                {options.map((option) => {
+                  const selected = selectedOptionIds.includes(option.id)
+                  return (
+                    <button
+                      type="button"
+                      key={option.id}
+                      onClick={() => toggleOption(option.id)}
+                      className={cn(
+                        'flex min-h-16 cursor-pointer items-center gap-3 rounded-xl border-2 p-3 text-left transition-colors',
+                        selected
+                          ? 'border-amber-500 bg-amber-500/10'
+                          : 'border-border hover:border-amber-500/60',
+                      )}
+                    >
+                      <Checkbox checked={selected} tabIndex={-1} />
+                      <span className="min-w-0 flex-1">
+                        <span className="block font-semibold">{option.name}</span>
+                        <span className="text-sm text-muted-foreground">
+                          {option.price > 0 ? `+ ${currency.format(option.price)}` : 'Miễn phí'}
+                        </span>
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+          </section>
+
+          <div className="space-y-2">
+            <Label htmlFor="item-note">Ghi chú món</Label>
+            <Textarea
+              id="item-note"
               value={note}
-              onChange={(e) => setNote(e.target.value)}
+              onChange={(event) => setNote(event.target.value)}
+              placeholder="Ví dụ: không hành, ít muối..."
+              maxLength={500}
             />
           </div>
 
-          {/* Quantity */}
-          <div className="flex items-center justify-between pt-2">
-            <Label className="text-base font-semibold">Số lượng</Label>
+          <div className="flex items-center justify-between rounded-xl bg-muted p-3">
+            <span className="font-semibold">Số lượng</span>
             <div className="flex items-center gap-3">
-              <Button 
-                variant="outline" 
-                size="icon" 
-                onClick={() => setQuantity(Math.max(1, quantity - 1))}
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                className="h-11 w-11"
+                onClick={() => setQuantity((value) => Math.max(1, value - 1))}
               >
-                <Minus className="h-4 w-4" />
+                <Minus className="h-5 w-5" />
               </Button>
-              <span className="w-8 text-center font-semibold text-lg">{quantity}</span>
-              <Button 
-                variant="outline" 
-                size="icon" 
-                onClick={() => setQuantity(quantity + 1)}
+              <span className="w-8 text-center text-xl font-bold">{quantity}</span>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                className="h-11 w-11"
+                onClick={() => setQuantity((value) => value + 1)}
               >
-                <Plus className="h-4 w-4" />
+                <Plus className="h-5 w-5" />
               </Button>
             </div>
           </div>
@@ -187,8 +224,8 @@ function ProductCustomizationModal({
 
         <DialogFooter className="border-t pt-4">
           <Button variant="outline" onClick={() => onOpenChange(false)}>Hủy</Button>
-          <Button onClick={handleAddToCart} className="min-w-[150px]">
-            Thêm - {totalPrice.toLocaleString('vi-VN')}đ
+          <Button className="min-w-48 text-base font-bold" onClick={handleAdd}>
+            Thêm vào giỏ · {currency.format(total)}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -196,400 +233,356 @@ function ProductCustomizationModal({
   )
 }
 
-// ─── Main POS Page ──────────────────────────────────────────────────
 export default function PosPage() {
-  const { items, customerName, customerPhone, note, removeItem, updateQuantity, setCustomerInfo, clearCart, getTotalPrice } = useCartStore()
-  
-  const [activeCategoryId, setActiveCategoryId] = useState<number | null>(null)
-  const [selectedProduct, setSelectedProduct] = useState<PosProduct | null>(null)
-  const [modalOpen, setModalOpen] = useState(false)
-  
-  const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'TRANSFER'>('CASH')
-  const [isCheckingOut, setIsCheckingOut] = useState(false)
-  const [searchTerm, setSearchTerm] = useState('')
-
-  // Shift state
-  const [activeShift, setActiveShift] = useState<Shift | null>(null)
   const navigate = useNavigate()
+  const {
+    items,
+    customerName,
+    customerPhone,
+    note,
+    removeItem,
+    updateQuantity,
+    setCustomerInfo,
+    setNote,
+    clearCart,
+    getTotalPrice,
+  } = useCartStore()
 
-  // QR Modal state
-  const [qrModalOpen, setQrModalOpen] = useState(false)
-  const [qrUrl, setQrUrl] = useState('')
-  const [orderTotal, setOrderTotal] = useState(0)
+  const [categoryId, setCategoryId] = useState<number | 'ALL'>('ALL')
+  const [search, setSearch] = useState('')
+  const [selectedProduct, setSelectedProduct] = useState<PosProduct | null>(null)
+  const [customizationOpen, setCustomizationOpen] = useState(false)
+  const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'TRANSFER'>('CASH')
 
-  // Fetch Current Shift
-  const { data: shiftData, isError: isShiftError } = useQuery({
+  const currentShiftQuery = useQuery({
     queryKey: ['current-shift'],
     queryFn: shiftApi.getCurrentShift,
-    retry: false
+    retry: false,
   })
-
-  // Fetch Settings for VietQR
-  const { data: settingsData } = useQuery({
-    queryKey: ['settings'],
-    queryFn: settingApi.getAllSettings
-  })
-
-  useEffect(() => {
-    if (isShiftError || (shiftData && !shiftData.data)) {
-      toast.error('Vui lòng mở ca trước khi vào máy POS')
-      navigate('/dashboard', { replace: true })
-    } else if (shiftData?.data) {
-      setActiveShift(shiftData.data)
-    }
-  }, [shiftData, isShiftError, navigate])
-
-  // Fetch POS data
-  const { data: categories = [], isLoading: isLoadingProducts } = useQuery({
+  const productsQuery = useQuery({
     queryKey: ['pos-products'],
     queryFn: productApi.getPosData,
     staleTime: 5 * 60 * 1000,
   })
-
-  // Fetch active options
-  const { data: options = [] } = useQuery({
-    queryKey: ['active-options'],
-    queryFn: () => optionApi.getAll().then(res => res.filter(o => o.isActive))
+  const optionsQuery = useQuery({
+    queryKey: ['pos-options'],
+    queryFn: optionApi.getPosOptions,
+    staleTime: 5 * 60 * 1000,
   })
 
-  // Set default category
-  useMemo(() => {
-    if (categories.length > 0 && activeCategoryId === null) {
-      setActiveCategoryId(categories[0].id)
+  useEffect(() => {
+    if (currentShiftQuery.isLoading) return
+    if (currentShiftQuery.isError || !currentShiftQuery.data?.data) {
+      toast.error('Vui lòng mở ca trước khi sử dụng POS')
+      navigate('/dashboard', { replace: true })
     }
-  }, [categories, activeCategoryId])
+  }, [currentShiftQuery.data, currentShiftQuery.isError, currentShiftQuery.isLoading, navigate])
 
-  const handleProductClick = (product: PosProduct) => {
-    if (product.status === 'SOLD_OUT') {
-      toast.error('Sản phẩm đã hết hàng')
-      return
-    }
-    if (product.status === 'INACTIVE') return
-    
-    setSelectedProduct(product)
-    setModalOpen(true)
-  }
+  const categories = productsQuery.data ?? []
+  const options = optionsQuery.data ?? []
+  const allProducts = useMemo(
+    () => categories.flatMap((category) => category.products),
+    [categories],
+  )
+  const products = useMemo(() => {
+    const source = categoryId === 'ALL'
+      ? allProducts
+      : categories.find((category) => category.id === categoryId)?.products ?? []
+    const keyword = search.trim().toLowerCase()
+    return source.filter((product) =>
+      product.status !== 'INACTIVE'
+      && (!keyword || product.name.toLowerCase().includes(keyword)),
+    )
+  }, [allProducts, categories, categoryId, search])
 
-  const handleCheckout = async () => {
-    if (!activeShift) {
-      toast.error('Vui lòng đợi tải thông tin ca')
-      return
-    }
-
-    if (items.length === 0) {
-      toast.error('Giỏ hàng trống')
-      return
-    }
-
-    setIsCheckingOut(true)
-    try {
-      const orderRequest: OrderRequest = {
-        customerName: customerName || undefined,
-        customerPhone: customerPhone || undefined,
-        paymentMethod,
-        note: note || undefined,
-        items: items.map(item => ({
-          productId: item.productId,
-          sizeId: item.sizeId,
-          quantity: item.quantity,
-          note: item.note,
-          optionIds: item.options.map(o => o.optionId)
-        }))
-      }
-
-      await orderApi.create(orderRequest)
-      const total = getTotalPrice()
-      
-      if (paymentMethod === 'TRANSFER') {
-        const bankIdSetting = settingsData?.data?.find((s: Setting) => s.key === 'bankId')?.value
-        const accountNoSetting = settingsData?.data?.find((s: Setting) => s.key === 'accountNo')?.value
-        const accountNameSetting = settingsData?.data?.find((s: Setting) => s.key === 'accountName')?.value
-
-        if (bankIdSetting && accountNoSetting) {
-          const qr = `https://img.vietqr.io/image/${bankIdSetting}-${accountNoSetting}-compact2.jpg?amount=${total}&addInfo=Thanh toan don hang&accountName=${accountNameSetting || ''}`
-          setQrUrl(qr)
-          setOrderTotal(total)
-          setQrModalOpen(true)
-        } else {
-          toast.warning('Chưa cấu hình ngân hàng. Vui lòng kiểm tra lại cài đặt.')
-        }
-      } else {
-        toast.success('Thanh toán thành công! Đã tạo đơn hàng.')
-      }
-      
+  const checkoutMutation = useMutation({
+    mutationFn: orderApi.create,
+    onSuccess: (order) => {
       clearCart()
-      setPaymentMethod('CASH')
-    } catch (error: any) {
-      toast.error(error?.response?.data?.message || 'Thanh toán thất bại')
-    } finally {
-      setIsCheckingOut(false)
+      toast.success(`Đơn #${order.queueNumber} đã chuyển sang Đang chuẩn bị`)
+      navigate('/admin/orders?tab=UNFINISHED')
+    },
+    onError: (error: unknown) => {
+      const message = typeof error === 'object' && error !== null && 'response' in error
+        ? (error as { response?: { data?: { message?: string } } }).response?.data?.message
+        : null
+      toast.error(message ?? 'Không thể tạo đơn hàng')
+    },
+  })
+
+  const handleCheckout = () => {
+    if (!currentShiftQuery.data?.data) {
+      toast.error('Bạn chưa mở ca')
+      return
     }
+    if (items.length === 0) {
+      toast.error('Giỏ hàng đang trống')
+      return
+    }
+
+    const request: OrderRequest = {
+      customerName: customerName.trim() || undefined,
+      customerPhone: customerPhone.trim() || undefined,
+      paymentMethod,
+      note: note.trim() || undefined,
+      items: items.map((item) => ({
+        productId: item.productId,
+        sizeId: item.sizeId,
+        quantity: item.quantity,
+        note: item.note,
+        optionIds: item.options.map((option) => option.optionId),
+      })),
+    }
+    checkoutMutation.mutate(request)
   }
 
-  const activeCategory = categories.find(c => c.id === activeCategoryId)
-  const filteredProducts = activeCategory?.products.filter(p => 
-    p.name.toLowerCase().includes(searchTerm.toLowerCase())
-  ) || []
+  const openProduct = (product: PosProduct) => {
+    if (product.status === 'SOLD_OUT') {
+      toast.error('Món này đang tạm hết')
+      return
+    }
+    setSelectedProduct(product)
+    setCustomizationOpen(true)
+  }
 
   return (
-    <div className="flex h-[calc(100vh-6rem)] gap-4 overflow-hidden -mx-2 -my-4 p-2">
-      
-      {/* ─── Left Column: Menu ─── */}
-      <div className="flex-1 flex flex-col min-w-0 bg-background rounded-lg border shadow-sm overflow-hidden">
-        
-        {/* Categories Tab and Search */}
-        <div className="flex flex-col border-b shrink-0 bg-muted/10">
-          <div className="p-3 pb-0 flex items-center justify-between">
-            <div className="relative w-64">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Tìm món ăn..."
-                className="pl-9 h-9 bg-background"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
+    <div className="-m-4 flex h-[calc(100vh-4rem)] gap-4 overflow-hidden bg-muted/30 p-4">
+      <section className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-2xl border bg-background shadow-sm">
+        <header className="space-y-4 border-b p-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h1 className="text-2xl font-bold">Chọn món</h1>
+              <p className="text-sm text-muted-foreground">
+                Hiển thị {products.length}/{allProducts.length} món đang kinh doanh
+              </p>
             </div>
-            {activeShift && (
-              <Badge variant="outline" className="h-6 bg-background">
-                Ca: {activeShift.openedByName}
-              </Badge>
-            )}
+            <Badge className="h-8 px-3" variant="secondary">
+              Ca của {currentShiftQuery.data?.data?.openedByName ?? '...'}
+            </Badge>
           </div>
-          <div className="flex overflow-x-auto p-3 gap-2 hide-scrollbar">
-            {isLoadingProducts ? (
-              <div className="flex gap-2">
-                {[1, 2, 3, 4].map(i => <div key={i} className="h-10 w-24 bg-muted animate-pulse rounded-full" />)}
-              </div>
-            ) : (
-              categories.map(cat => (
-                <Button
-                  key={cat.id}
-                  variant={activeCategoryId === cat.id ? 'default' : 'outline'}
-                  className="rounded-full whitespace-nowrap"
-                  onClick={() => setActiveCategoryId(cat.id)}
-                >
-                  {cat.name}
-                </Button>
-              ))
-            )}
-          </div>
-        </div>
 
-        {/* Products Grid */}
-        <div className="flex-1 overflow-y-auto p-4 bg-muted/5">
-          {isLoadingProducts ? (
-            <div className="flex items-center justify-center h-full">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              className="h-12 pl-11 text-base"
+              placeholder="Tìm nhanh tên món..."
+            />
+          </div>
+
+          <div className="flex gap-2 overflow-x-auto pb-1">
+            <Button
+              className="min-h-11 shrink-0 rounded-full px-5"
+              variant={categoryId === 'ALL' ? 'default' : 'outline'}
+              onClick={() => setCategoryId('ALL')}
+            >
+              Tất cả món
+            </Button>
+            {categories.map((category) => (
+              <Button
+                key={category.id}
+                className="min-h-11 shrink-0 rounded-full px-5"
+                variant={categoryId === category.id ? 'default' : 'outline'}
+                onClick={() => setCategoryId(category.id)}
+              >
+                {category.name}
+              </Button>
+            ))}
+          </div>
+        </header>
+
+        <div className="flex-1 overflow-y-auto p-4">
+          {productsQuery.isLoading ? (
+            <div className="flex h-full items-center justify-center">
+              <Loader2 className="h-8 w-8 animate-spin" />
             </div>
-          ) : filteredProducts.length === 0 ? (
-            <div className="flex items-center justify-center h-full text-muted-foreground text-center px-4">
-              <p>Chưa có sản phẩm nào.<br/>Vui lòng thêm Danh mục và Sản phẩm trong phần Thực đơn.</p>
+          ) : products.length === 0 ? (
+            <div className="flex h-full flex-col items-center justify-center text-muted-foreground">
+              <Utensils className="mb-3 h-12 w-12" />
+              <p>Không tìm thấy món phù hợp.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-              {filteredProducts.map(prod => (
-                <div 
-                  key={prod.id} 
-                  className={`
-                    relative group bg-card rounded-xl border overflow-hidden flex flex-col cursor-pointer transition-all hover:shadow-md hover:border-primary/50
-                    ${prod.status === 'SOLD_OUT' ? 'opacity-60 grayscale' : ''}
-                  `}
-                  onClick={() => handleProductClick(prod)}
-                >
-                  <div className="aspect-square bg-muted relative">
-                    {prod.imageUrl ? (
-                      <img src={prod.imageUrl} alt={prod.name} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-muted-foreground">No Image</div>
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+              {products.map((product) => {
+                const prices = product.variants.map((variant) => variant.price)
+                const lowestPrice = prices.length ? Math.min(...prices) : product.basePrice
+                return (
+                  <button
+                    type="button"
+                    key={product.id}
+                    onClick={() => openProduct(product)}
+                    className={cn(
+                      'group flex min-h-56 cursor-pointer flex-col overflow-hidden rounded-2xl border-2 bg-card text-left transition-colors hover:border-primary hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                      product.status === 'SOLD_OUT' && 'opacity-60 grayscale',
                     )}
-                    {prod.status === 'SOLD_OUT' && (
-                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                        <Badge variant="destructive" className="text-lg">Hết món</Badge>
-                      </div>
-                    )}
-                  </div>
-                  <div className="p-3 flex-1 flex flex-col">
-                    <h3 className="font-semibold text-sm line-clamp-2 mb-1">{prod.name}</h3>
-                    <div className="mt-auto font-bold text-primary">
-                      {prod.basePrice.toLocaleString('vi-VN')}đ
+                  >
+                    <div className="relative aspect-[4/3] bg-muted">
+                      {product.imageUrl ? (
+                        <img
+                          src={product.imageUrl}
+                          alt={product.name}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-full items-center justify-center">
+                          <Utensils className="h-10 w-10 text-muted-foreground/50" />
+                        </div>
+                      )}
+                      {product.status === 'SOLD_OUT' && (
+                        <Badge variant="destructive" className="absolute left-3 top-3">Tạm hết</Badge>
+                      )}
                     </div>
-                  </div>
-                </div>
-              ))}
+                    <div className="flex flex-1 flex-col p-4">
+                      <h2 className="line-clamp-2 text-base font-bold">{product.name}</h2>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {product.variants.map((variant) => variant.size.name).join(' · ')}
+                      </p>
+                      <div className="mt-auto flex items-end justify-between pt-4">
+                        <span>
+                          <span className="block text-xs text-muted-foreground">Từ</span>
+                          <span className="text-lg font-bold text-primary">{currency.format(lowestPrice)}</span>
+                        </span>
+                        <span className="rounded-full bg-primary/10 p-2 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+                          <ChevronRight className="h-5 w-5" />
+                        </span>
+                      </div>
+                    </div>
+                  </button>
+                )
+              })}
             </div>
           )}
         </div>
-      </div>
+      </section>
 
-      {/* ─── Right Column: Cart ─── */}
-      <div className="w-[380px] shrink-0 flex flex-col bg-background rounded-lg border shadow-sm overflow-hidden">
-        
-        {/* Cart Header */}
-        <div className="p-4 border-b bg-primary text-primary-foreground flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-2 font-semibold text-lg">
+      <aside className="flex w-[390px] shrink-0 flex-col overflow-hidden rounded-2xl border bg-background shadow-sm">
+        <header className="flex items-center justify-between bg-primary p-4 text-primary-foreground">
+          <div className="flex items-center gap-2 text-lg font-bold">
             <ShoppingCart className="h-5 w-5" />
-            <span>Giỏ hàng</span>
+            Giỏ hàng
           </div>
-          <Badge variant="secondary" className="font-mono text-sm px-2">
-            {items.reduce((acc, i) => acc + i.quantity, 0)} món
+          <Badge variant="secondary">
+            {items.reduce((sum, item) => sum + item.quantity, 0)} phần
           </Badge>
-        </div>
+        </header>
 
-        {/* Cart Items */}
-        <div className="flex-1 overflow-y-auto p-3 space-y-3 bg-muted/10">
+        <div className="flex-1 space-y-3 overflow-y-auto bg-muted/20 p-3">
           {items.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-muted-foreground opacity-50 space-y-3">
-              <ShoppingCart className="h-12 w-12" />
-              <p>Chưa có món nào</p>
+            <div className="flex h-full flex-col items-center justify-center text-muted-foreground">
+              <ShoppingCart className="mb-3 h-12 w-12 opacity-40" />
+              <p>Chạm vào món để bắt đầu</p>
             </div>
           ) : (
-            items.map(item => {
-              const optionsTotal = item.options.reduce((sum, o) => sum + o.price, 0)
-              const unitTotal = item.unitPrice + optionsTotal
+            items.map((item) => {
+              const unitTotal = item.unitPrice + item.options.reduce((sum, option) => sum + option.price, 0)
               return (
-                <div key={item.id} className="bg-card p-3 rounded-lg border shadow-sm relative group">
-                  <div className="flex justify-between items-start mb-2 pr-6">
-                    <div>
-                      <div className="font-semibold text-sm">{item.productName} ({item.sizeName})</div>
+                <article key={item.id} className="rounded-xl border bg-card p-3 shadow-sm">
+                  <div className="flex justify-between gap-3">
+                    <div className="min-w-0">
+                      <h3 className="font-bold">{item.productName}</h3>
+                      <Badge variant="outline" className="mt-1">{item.sizeName}</Badge>
                       {item.options.length > 0 && (
-                        <div className="text-xs text-muted-foreground mt-0.5">
-                          + {item.options.map(o => o.optionName).join(', ')}
-                        </div>
+                        <p className="mt-2 text-xs text-muted-foreground">
+                          {item.options.map((option) => option.optionName).join(', ')}
+                        </p>
                       )}
-                      {item.note && (
-                        <div className="text-xs text-amber-600 mt-0.5 font-medium">
-                          Lưu ý: {item.note}
-                        </div>
-                      )}
+                      {item.note && <p className="mt-1 text-xs font-medium text-amber-600">{item.note}</p>}
                     </div>
-                    <div className="font-bold text-sm text-right shrink-0">
-                      {(unitTotal * item.quantity).toLocaleString('vi-VN')}đ
-                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-9 w-9 shrink-0 text-destructive"
+                      onClick={() => removeItem(item.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </div>
-                  
-                  <div className="flex items-center justify-between mt-2">
-                    <div className="text-xs text-muted-foreground">
-                      {unitTotal.toLocaleString('vi-VN')}đ / phần
-                    </div>
+                  <div className="mt-3 flex items-center justify-between border-t pt-3">
                     <div className="flex items-center gap-2">
-                      <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQuantity(item.id, item.quantity - 1)}>
-                        <Minus className="h-3 w-3" />
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-10 w-10"
+                        onClick={() => item.quantity === 1
+                          ? removeItem(item.id)
+                          : updateQuantity(item.id, item.quantity - 1)}
+                      >
+                        <Minus className="h-4 w-4" />
                       </Button>
-                      <span className="w-6 text-center font-semibold text-sm">{item.quantity}</span>
-                      <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQuantity(item.id, item.quantity + 1)}>
-                        <Plus className="h-3 w-3" />
+                      <span className="w-6 text-center font-bold">{item.quantity}</span>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-10 w-10"
+                        onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                      >
+                        <Plus className="h-4 w-4" />
                       </Button>
                     </div>
+                    <span className="font-bold">{currency.format(unitTotal * item.quantity)}</span>
                   </div>
-
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="absolute top-1 right-1 h-6 w-6 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
-                    onClick={() => removeItem(item.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
+                </article>
               )
             })
           )}
         </div>
 
-        {/* Customer Info & Checkout */}
-        <div className="p-4 border-t bg-card shrink-0 space-y-4">
-          <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-2">
-              <Input 
-                placeholder="Tên khách" 
-                className="h-9 text-sm" 
-                value={customerName} 
-                onChange={e => setCustomerInfo(e.target.value, customerPhone)} 
-              />
-              <Input 
-                placeholder="SĐT" 
-                className="h-9 text-sm" 
-                value={customerPhone} 
-                onChange={e => setCustomerInfo(customerName, e.target.value)} 
-              />
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <Button 
-                variant={paymentMethod === 'CASH' ? 'default' : 'outline'} 
-                className="flex-1 h-9 text-xs"
-                onClick={() => setPaymentMethod('CASH')}
-              >
-                Tiền mặt
-              </Button>
-              <Button 
-                variant={paymentMethod === 'TRANSFER' ? 'default' : 'outline'} 
-                className="flex-1 h-9 text-xs"
-                onClick={() => setPaymentMethod('TRANSFER')}
-              >
-                Chuyển khoản
-              </Button>
-            </div>
+        <div className="space-y-3 border-t p-4">
+          <div className="grid grid-cols-2 gap-2">
+            <Input
+              value={customerName}
+              onChange={(event) => setCustomerInfo(event.target.value, customerPhone)}
+              placeholder="Tên khách"
+            />
+            <Input
+              value={customerPhone}
+              onChange={(event) => setCustomerInfo(customerName, event.target.value)}
+              placeholder="Số điện thoại"
+            />
           </div>
-
-          <div className="pt-3 border-t">
-            <div className="flex items-center justify-between mb-4">
-              <span className="font-semibold text-lg">Tổng thanh toán:</span>
-              <span className="text-2xl font-bold text-primary">
-                {getTotalPrice().toLocaleString('vi-VN')}đ
-              </span>
-            </div>
-            <Button 
-              className="w-full h-12 text-base font-bold shadow-md" 
-              onClick={handleCheckout}
-              disabled={isCheckingOut || items.length === 0}
+          <Textarea
+            value={note}
+            onChange={(event) => setNote(event.target.value)}
+            placeholder="Ghi chú chung cho đơn"
+            className="min-h-16"
+          />
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              variant={paymentMethod === 'CASH' ? 'default' : 'outline'}
+              onClick={() => setPaymentMethod('CASH')}
             >
-              {isCheckingOut ? <Loader2 className="h-5 w-5 animate-spin" /> : 'THANH TOÁN'}
+              Tiền mặt
+            </Button>
+            <Button
+              variant={paymentMethod === 'TRANSFER' ? 'default' : 'outline'}
+              onClick={() => setPaymentMethod('TRANSFER')}
+            >
+              Chuyển khoản
             </Button>
           </div>
+          <div className="flex items-end justify-between border-t pt-3">
+            <span className="font-semibold">Tổng thanh toán</span>
+            <span className="text-2xl font-black text-primary">{currency.format(getTotalPrice())}</span>
+          </div>
+          <Button
+            className="h-14 w-full text-base font-black"
+            disabled={items.length === 0 || checkoutMutation.isPending}
+            onClick={handleCheckout}
+          >
+            {checkoutMutation.isPending
+              ? <Loader2 className="h-5 w-5 animate-spin" />
+              : 'THANH TOÁN & GỬI CHẾ BIẾN'}
+          </Button>
         </div>
+      </aside>
 
-      </div>
-
-      {/* Modals */}
-      <ProductCustomizationModal 
-        product={selectedProduct} 
-        open={modalOpen} 
-        onOpenChange={setModalOpen}
+      <ProductCustomizationDialog
+        product={selectedProduct}
         options={options}
+        open={customizationOpen}
+        onOpenChange={setCustomizationOpen}
       />
-
-      {/* VietQR Modal */}
-      <Dialog open={qrModalOpen} onOpenChange={setQrModalOpen}>
-        <DialogContent className="sm:max-w-[400px]">
-          <DialogHeader>
-            <DialogTitle className="text-center">Thanh toán chuyển khoản</DialogTitle>
-          </DialogHeader>
-          <div className="flex flex-col items-center justify-center py-6 space-y-4">
-            {qrUrl ? (
-              <div className="bg-white p-2 rounded-xl shadow-sm border">
-                <img src={qrUrl} alt="VietQR" className="w-64 h-64 object-contain" />
-              </div>
-            ) : (
-              <div className="w-64 h-64 bg-muted flex items-center justify-center rounded-xl">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-              </div>
-            )}
-            <div className="text-center space-y-1">
-              <p className="text-sm text-muted-foreground">Số tiền cần thanh toán</p>
-              <p className="text-2xl font-bold text-primary">{orderTotal.toLocaleString('vi-VN')}đ</p>
-            </div>
-            <div className="text-sm text-center text-muted-foreground px-4">
-              Vui lòng yêu cầu khách hàng quét mã QR trên ứng dụng ngân hàng để thanh toán.
-            </div>
-          </div>
-          <DialogFooter>
-            <Button className="w-full" onClick={() => setQrModalOpen(false)}>
-              Hoàn thành
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }

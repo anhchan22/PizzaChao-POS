@@ -202,42 +202,45 @@ CREATE TABLE users (
 | 3.15 | Settings page | Thông tin cửa hàng + bank QR config |
 
 ### Deliverables Phase 3
-- [ ] Mở ca → POS tạo đơn → Đơn vào queue → Thanh toán → Đóng ca
-- [ ] Thanh toán tiền mặt + CK + kết hợp
-- [ ] QR VietQR
-- [ ] Đối soát tiền cuối ca
+- [x] Mở ca → POS tạo đơn → Đơn vào queue → Thanh toán → Đóng ca
+- [x] Thanh toán tiền mặt + CK + kết hợp
+- [x] QR VietQR
+- [x] Đối soát tiền cuối ca
 
 ---
 
-## PHASE 4 — Order Queue + Cancel/Refund
+## PHASE 4 — Order Queue + Cancel
 
-> **Mục tiêu**: Màn quản lý đơn chờ + hủy/hoàn tiền
+> **Quyết định scope**: Phase 4 đã được gộp phần lớn vào Phase 3 trong các nhánh POS Order/Payment.
+> Không triển khai `Refund` và không cần `Owner confirm shift` cho MVP hiện tại.
+> Luồng hủy đơn có lý do + cập nhật tiền ca khi cần là đủ cho vận hành quán.
 
 ### Backend Tasks
 
 | # | Task | DB Tables |
 |---|------|-----------|
-| 4.1 | Order Queue endpoints (current-shift, queue-status, queue-complete) | — (dùng `orders`) |
+| 4.1 | Order Queue endpoints/list/filter | — (dùng `orders`) |
 | 4.2 | Cancel order logic (bắt buộc lý do) | — |
-| 4.3 | Entity `Refund` + refund logic | `refunds` |
-| 4.4 | Cập nhật shift totals khi cancel/refund | — |
-| 4.5 | Owner confirm shift | — |
+| 4.3 | Cập nhật shift totals khi hủy đơn tiền mặt | — |
+| 4.4 | Refund logic | Bỏ khỏi scope MVP |
+| 4.5 | Owner confirm shift | Bỏ khỏi scope MVP |
 
 ### Frontend Tasks
 
 | # | Task | Mô tả |
 |---|------|-------|
-| 4.6 | **Order Queue Screen** | Danh sách đơn chờ: PENDING → PROCESSING → COMPLETED. Hiển thị #queue, món, ghi chú |
-| 4.7 | Cancel order dialog | Chọn/nhập lý do hủy |
-| 4.8 | Refund dialog | Số tiền, phương thức hoàn, lý do |
-| 4.9 | Order history page | Filter theo thời gian/trạng thái/nhân viên |
-| 4.10 | Order detail | Chi tiết đơn + lịch sử thanh toán/hoàn tiền |
-| 4.11 | Shift history (OWNER) | Danh sách ca + xác nhận |
+| 4.6 | **Order Queue Screen** | Danh sách đơn chưa xong/đã xong/đã hủy/tất cả, hiển thị #queue, món, ghi chú |
+| 4.7 | Cancel order dialog | Nhập lý do hủy bắt buộc |
+| 4.8 | Refund dialog | Bỏ khỏi scope MVP |
+| 4.9 | Order history page | Filter theo trạng thái + tìm kiếm |
+| 4.10 | Order detail | Chi tiết đơn + thanh toán + lý do hủy |
+| 4.11 | Shift history (OWNER) | Danh sách ca + chi tiết đối soát |
 
 ### Deliverables Phase 4
-- [ ] Quản lý đơn chờ (PENDING → PROCESSING → COMPLETED)
-- [ ] Hủy đơn + hoàn tiền có kiểm soát
-- [ ] OWNER xem + xác nhận ca
+- [x] Quản lý đơn chờ/chưa xong → đã xong/đã hủy
+- [x] Hủy đơn có lý do, xem lại được trong chi tiết đơn
+- [x] OWNER xem lịch sử ca
+- [x] Refund và owner confirm shift được loại khỏi MVP theo quyết định sản phẩm
 
 ---
 
@@ -249,8 +252,8 @@ CREATE TABLE users (
 
 | # | Task | DB Tables |
 |---|------|-----------|
-| 5.1 | Enums: `ExpenseType`, `StockMovementType` | — |
-| 5.2 | Entity `Expense` + CRUD | `expenses` |
+| 5.1 | Enums: `ExpenseType`, `StockMovementType` | `ExpenseType` xong, `StockMovementType` làm ở nhánh inventory |
+| 5.2 | Entity `Expense` + CRUD | `expenses` — xong |
 | 5.3 | Entity `InventoryItem` + CRUD + low-stock | `inventory_items` |
 | 5.4 | Entity `StockMovement` + stock-in/out/adjust | `stock_movements` |
 | 5.5 | Entity `ActivityLog` + AOP auto-log | `activity_logs` |
@@ -259,13 +262,13 @@ CREATE TABLE users (
 
 | # | Task |
 |---|------|
-| 5.6 | Expense management (CRUD + filter + upload ảnh) |
+| 5.6 | Expense management (CRUD + filter + upload ảnh) — xong |
 | 5.7 | Inventory management (CRUD + cảnh báo sắp hết) |
 | 5.8 | Stock movement (nhập/xuất/kiểm kho + lịch sử) |
 | 5.9 | Activity log page (OWNER, filter) |
 
 ### Deliverables Phase 5
-- [ ] Chi phí trong/ngoài ca
+- [x] Chi phí trong/ngoài ca
 - [ ] Vật tư (hộp, thìa, túi) + cảnh báo
 - [ ] Nhật ký thao tác tự động
 

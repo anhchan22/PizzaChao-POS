@@ -952,3 +952,4 @@ activity_logs
 store_settings
 payment_settings
 ```
+

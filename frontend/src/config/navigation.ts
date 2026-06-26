@@ -3,6 +3,7 @@ import {
   History,
   HomeIcon,
   PackageIcon,
+  ReceiptText,
   Settings,
   ShoppingCart,
   type LucideIcon,
@@ -49,6 +50,7 @@ export const navigation: NavGroup[] = [
     label: 'Quản lý',
     items: [
       { title: 'Nhân viên', href: '/admin/users', icon: Users, roles: ['OWNER'] },
+      { title: 'Chi phí', href: '/admin/expenses', icon: ReceiptText, roles: ['OWNER', 'STAFF'] },
       { title: 'Lịch sử ca', href: '/admin/shifts', icon: History, roles: ['OWNER'] },
       { title: 'Cài đặt', href: '/admin/settings', icon: Settings, roles: ['OWNER'] },
     ],

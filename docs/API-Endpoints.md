@@ -500,17 +500,34 @@ Quản lý chi phí
 ### GET /expenses
 **Lấy danh sách chi phí**
 
-Query: `?fromDate=2026-06-01&toDate=2026-06-22&type=PACKAGING&shiftId=1`
+Query: `?fromDate=2026-06-01&toDate=2026-06-22&type=PACKAGING&shiftOnly=true&keyword=hộp&page=0&size=20`
+
+Rules:
+- `OWNER` xem toàn bộ chi phí.
+- `STAFF` chỉ xem các khoản chi do chính mình tạo.
 
 ### POST /expenses
 **Tạo khoản chi**
 
 Body:
 ```json
-{ "type": "PACKAGING", "amount": 120000, "paymentMethod": "CASH", "shiftId": 1, "note": "Mua thêm hộp nhỏ" }
+{
+  "type": "PACKAGING",
+  "title": "Mua hộp nhỏ",
+  "amount": 120000,
+  "incurredAt": "2026-06-26T09:30:00",
+  "attachToCurrentShift": true,
+  "note": "Mua thêm hộp nhỏ",
+  "receiptImageUrl": "/uploads/receipt.jpg"
+}
 ```
 
-Type: `INGREDIENT` | `PACKAGING` | `GAS` | `ELECTRICITY` | `WATER` | `SALARY` | `OTHER`
+Type: `INGREDIENT` | `PACKAGING` | `UTILITY` | `REPAIR` | `OTHER`
+
+Rules:
+- Nếu `attachToCurrentShift = true`, user phải có ca đang mở.
+- Nếu là chi phí ngoài ca, đặt `attachToCurrentShift = false`.
+- Ảnh hóa đơn là tùy chọn, upload qua Upload API rồi lưu URL vào `receiptImageUrl`.
 
 ### GET /expenses/{id}
 **Xem chi tiết khoản chi**
@@ -520,6 +537,10 @@ Type: `INGREDIENT` | `PACKAGING` | `GAS` | `ELECTRICITY` | `WATER` | `SALARY` | 
 
 ### DELETE /expenses/{id}
 **Xóa khoản chi**
+
+Rules:
+- `OWNER` thao tác mọi khoản chi.
+- `STAFF` chỉ thao tác khoản chi do chính mình tạo.
 
 ---
 

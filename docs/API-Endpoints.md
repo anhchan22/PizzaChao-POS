@@ -277,8 +277,11 @@ Quản lý đơn hàng
 Body:
 ```json
 {
+  "paymentMethod": "CASH",
+  "receivedAmount": 100000,
+  "paymentConfirmed": true,
   "items": [
-    { "productVariantId": 1, "quantity": 2, "optionIds": [1, 2], "note": "Không hành" }
+    { "productId": 1, "sizeId": 2, "quantity": 2, "optionIds": [1, 2], "note": "Không hành" }
   ],
   "discountAmount": 0,
   "note": "Khách chờ lấy ngay"
@@ -287,9 +290,28 @@ Body:
 
 Rules:
 - Phải có ca đang mở mới được tạo đơn
-- POS-02 giả định thanh toán đã thành công
+- Backend tự tính lại tổng tiền từ sản phẩm, size và topping
+- Chỉ tạo đơn sau khi `paymentConfirmed = true`
+- Tiền mặt: `receivedAmount >= totalAmount`, hệ thống lưu `changeAmount`
+- Chuyển khoản: bắt buộc có `paymentReference`
+- POS-03 chỉ gửi request sau khi nhân viên xác nhận đã nhận thanh toán
 - Đơn mới tạo đi thẳng vào hàng đợi: `orderStatus = PROCESSING`
 - Đơn nhận `queueNumber` tăng dần trong ca hiện tại
+
+Body chuyển khoản:
+```json
+{
+  "paymentMethod": "TRANSFER",
+  "paymentReference": "PCN8F12A9C301",
+  "paymentConfirmed": true,
+  "items": [
+    { "productId": 1, "sizeId": 2, "quantity": 1, "optionIds": [] }
+  ]
+}
+```
+
+QR VietQR được sinh từ cấu hình `bankId`, `accountNo`, `accountName`, đúng số tiền và `paymentReference`.
+Phiên bản hiện tại xác nhận chuyển khoản thủ công. Muốn tự động xác nhận cần tích hợp webhook giao dịch ngân hàng/SePay.
 
 ### GET /orders
 **Lấy danh sách đơn**

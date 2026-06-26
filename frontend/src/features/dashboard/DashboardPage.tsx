@@ -48,6 +48,8 @@ export function DashboardPage() {
     queryKey: ['current-shift'],
     queryFn: shiftApi.getCurrentShift,
     retry: false,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
   })
 
   const activeShift = currentShiftQuery.data?.data ?? null
@@ -110,10 +112,6 @@ export function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Xin chào, {user?.fullName}</h1>
-        <p className="mt-1 text-muted-foreground">Tổng quan hoạt động cửa hàng hôm nay</p>
-      </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Card className="border-primary/20 bg-primary/5 shadow-sm">
@@ -154,7 +152,7 @@ export function DashboardPage() {
                   <span className="font-medium">{currency.format(activeShift.startingCash)}</span>
                 </div>
                 <div className="flex justify-between gap-4">
-                  <span className="text-muted-foreground">Tiền dự kiến</span>
+                  <span className="text-muted-foreground">Tiền mặt dự kiến</span>
                   <span className="font-semibold text-primary">{currency.format(activeShift.expectedCash)}</span>
                 </div>
                 {activeShift.openingNote && (

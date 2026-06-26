@@ -16,6 +16,9 @@ public class OrderResponse {
     private String customerPhone;
     private OrderStatus status;
     private PaymentMethod paymentMethod;
+    private BigDecimal receivedAmount;
+    private BigDecimal changeAmount;
+    private String paymentReference;
     private BigDecimal totalAmount;
     private String note;
     private String cancelReason;

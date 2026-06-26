@@ -35,7 +35,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
           {!collapsed && (
             <div className="flex flex-col overflow-hidden">
               <span className="truncate text-sm font-bold text-foreground">
-                CháoNgon
+                PizzaCháoNgon
               </span>
               <span className="truncate text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
                 POS System

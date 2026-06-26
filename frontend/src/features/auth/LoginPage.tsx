@@ -48,7 +48,7 @@ export function LoginPage() {
             <Soup className="h-8 w-8 text-primary" />
           </div>
           <div>
-            <CardTitle className="text-2xl font-bold tracking-tight">CháoNgon POS</CardTitle>
+            <CardTitle className="text-2xl font-bold tracking-tight">PizzaCháoNgon POS</CardTitle>
             <CardDescription className="mt-1.5 text-muted-foreground">
               Hệ thống quản lý cửa hàng cháo dinh dưỡng
             </CardDescription>

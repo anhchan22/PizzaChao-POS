@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
+  Banknote,
   Check,
   ChevronRight,
   Loader2,
   Minus,
   Plus,
+  QrCode,
   Search,
   ShoppingCart,
   Trash2,
@@ -31,6 +33,8 @@ import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/utils'
 import { useCartStore } from '@/stores/cartStore'
 import type { PosProduct, ProductOption } from '@/types'
+import { settingApi } from '../settings/api/setting.api'
+import type { Setting } from '../settings/types/setting.types'
 import { shiftApi } from '../shift/api/shift.api'
 
 const currency = new Intl.NumberFormat('vi-VN', {
@@ -38,6 +42,15 @@ const currency = new Intl.NumberFormat('vi-VN', {
   currency: 'VND',
   maximumFractionDigits: 0,
 })
+
+function createTransferReference(prefix: string) {
+  const safePrefix = (prefix || 'PCN').replace(/[^A-Za-z0-9]/g, '').toUpperCase() || 'PCN'
+  const randomPart = typeof crypto !== 'undefined' && 'randomUUID' in crypto
+    ? crypto.randomUUID().replace(/-/g, '').slice(0, 10).toUpperCase()
+    : Math.random().toString(36).slice(2, 12).toUpperCase()
+
+  return `${safePrefix}${randomPart}`
+}
 
 function ProductCustomizationDialog({
   product,
@@ -160,10 +173,12 @@ function ProductCustomizationDialog({
                 {options.map((option) => {
                   const selected = selectedOptionIds.includes(option.id)
                   return (
-                    <button
-                      type="button"
+                    <div
+                      role="button"
+                      tabIndex={0}
                       key={option.id}
                       onClick={() => toggleOption(option.id)}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') toggleOption(option.id) }}
                       className={cn(
                         'flex min-h-16 cursor-pointer items-center gap-3 rounded-xl border-2 p-3 text-left transition-colors',
                         selected
@@ -178,7 +193,7 @@ function ProductCustomizationDialog({
                           {option.price > 0 ? `+ ${currency.format(option.price)}` : 'Miễn phí'}
                         </span>
                       </span>
-                    </button>
+                    </div>
                   )
                 })}
               </div>
@@ -233,8 +248,179 @@ function ProductCustomizationDialog({
   )
 }
 
+// PaymentDialog
+function PaymentDialog({
+  open,
+  onOpenChange,
+  totalAmount,
+  paymentMethod,
+  transferConfig,
+  onConfirm,
+  isPending,
+}: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  totalAmount: number
+  paymentMethod: 'CASH' | 'TRANSFER'
+  transferConfig: {
+    bankId: string
+    accountNo: string
+    accountName: string
+    transferPrefix: string
+    storeName: string
+    qrImageUrl: string
+  }
+  onConfirm: (receivedAmount?: number, paymentReference?: string) => void
+  isPending: boolean
+}) {
+  const [receivedInput, setReceivedInput] = useState('')
+  const [transferReference, setTransferReference] = useState('')
+  const received = Number(receivedInput.replace(/,/g, '')) || 0
+  const change = paymentMethod === 'CASH' ? received - totalAmount : 0
+
+  useEffect(() => {
+    if (open) setReceivedInput('')
+  }, [open])
+
+  useEffect(() => {
+    if (open && paymentMethod === 'TRANSFER') {
+      setTransferReference(createTransferReference(transferConfig.transferPrefix))
+    }
+  }, [open, paymentMethod, transferConfig.transferPrefix])
+
+  const QUICK_AMOUNTS = [10000, 20000, 50000, 100000, 200000, 500000]
+
+  const canConfirm =
+    paymentMethod === 'TRANSFER' || (received >= totalAmount)
+  const qrUrl = transferConfig.qrImageUrl
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-xl">
+            {paymentMethod === 'CASH' ? (
+              <><Banknote className="h-5 w-5 text-green-500" /> Thanh toán tiền mặt</>
+            ) : (
+              <><QrCode className="h-5 w-5 text-blue-500" /> Thanh toán chuyển khoản</>
+            )}
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-5 py-2">
+          {/* Tổng tiền */}
+          <div className="rounded-xl bg-muted p-4 text-center">
+            <p className="text-sm text-muted-foreground">Tổng cần thanh toán</p>
+            <p className="mt-1 text-3xl font-black text-primary">{currency.format(totalAmount)}</p>
+          </div>
+
+          {paymentMethod === 'CASH' ? (
+            <>
+              {/* Các mệnh giá nhanh */}
+              <div>
+                <p className="mb-2 text-sm font-semibold">Chọn nhanh mệnh giá</p>
+                <div className="grid grid-cols-3 gap-2">
+                  {QUICK_AMOUNTS.map((amount) => (
+                    <button
+                      key={amount}
+                      type="button"
+                      onClick={() => setReceivedInput(String(amount))}
+                      className={cn(
+                        'rounded-lg border-2 px-2 py-2 text-sm font-semibold transition-colors',
+                        received === amount
+                          ? 'border-primary bg-primary text-primary-foreground'
+                          : 'border-border hover:border-primary/60',
+                      )}
+                    >
+                      {currency.format(amount)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Nhập tay */}
+              <div className="space-y-1">
+                <Label htmlFor="received-amount">Khách đưa (VNĐ)</Label>
+                <Input
+                  id="received-amount"
+                  type="number"
+                  min={0}
+                  step={1000}
+                  placeholder="Nhập số tiền khách đưa..."
+                  value={receivedInput}
+                  onChange={(e) => setReceivedInput(e.target.value)}
+                  className="h-12 text-lg font-semibold"
+                  autoFocus
+                />
+              </div>
+
+              {/* Tiền thừa */}
+              {received > 0 && (
+                <div className={cn(
+                  'flex items-center justify-between rounded-xl border-2 p-3',
+                  change >= 0 ? 'border-green-400 bg-green-50 dark:bg-green-950/30' : 'border-red-400 bg-red-50 dark:bg-red-950/30',
+                )}>
+                  <span className="font-semibold">Tiền thừa</span>
+                  <span className={cn('text-xl font-black', change >= 0 ? 'text-green-600' : 'text-red-500')}>
+                    {change >= 0 ? currency.format(change) : `Thiếu ${currency.format(-change)}`}
+                  </span>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="space-y-4">
+              {qrUrl ? (
+                <div className="flex flex-col items-center gap-3 rounded-xl border bg-white p-4 text-center text-slate-900">
+                  <img
+                    src={qrUrl}
+                    alt="Mã QR chuyển khoản"
+                    className="h-64 w-64 rounded-lg object-contain"
+                  />
+                  <div>
+                    <p className="font-black">{transferConfig.storeName || transferConfig.accountName || 'CHAO NGON'}</p>
+                    {transferConfig.accountNo && (
+                      <p className="text-sm">STK: <strong>{transferConfig.accountNo}</strong></p>
+                    )}
+                    {transferConfig.accountName && (
+                      <p className="text-sm">Chủ TK: <strong>{transferConfig.accountName}</strong></p>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm">
+                  Chưa có QR chuyển khoản. Vào <strong>Cài đặt</strong> để tải ảnh QR.
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        <DialogFooter className="gap-2 border-t pt-4">
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isPending}>
+            Hủy
+          </Button>
+          <Button
+            className="flex-1 h-12 text-base font-bold"
+            disabled={!canConfirm || isPending}
+            onClick={() => onConfirm(
+              paymentMethod === 'CASH' ? received : undefined,
+              paymentMethod === 'TRANSFER' ? transferReference : undefined,
+            )}
+          >
+            {isPending
+              ? <Loader2 className="h-5 w-5 animate-spin" />
+              : 'Xác Nhận'
+            }
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 export default function PosPage() {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const {
     items,
     customerName,
@@ -253,6 +439,7 @@ export default function PosPage() {
   const [selectedProduct, setSelectedProduct] = useState<PosProduct | null>(null)
   const [customizationOpen, setCustomizationOpen] = useState(false)
   const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'TRANSFER'>('CASH')
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false)
 
   const currentShiftQuery = useQuery({
     queryKey: ['current-shift'],
@@ -269,6 +456,11 @@ export default function PosPage() {
     queryFn: optionApi.getPosOptions,
     staleTime: 5 * 60 * 1000,
   })
+  const settingsQuery = useQuery({
+    queryKey: ['settings'],
+    queryFn: settingApi.getAllSettings,
+    staleTime: 60_000,
+  })
 
   useEffect(() => {
     if (currentShiftQuery.isLoading) return
@@ -280,6 +472,17 @@ export default function PosPage() {
 
   const categories = productsQuery.data ?? []
   const options = optionsQuery.data ?? []
+  const settings = settingsQuery.data?.data ?? []
+  const getSetting = (key: string, fallback = '') =>
+    settings.find((setting: Setting) => setting.key === key)?.value || fallback
+  const transferConfig = {
+    bankId: getSetting('bankId'),
+    accountNo: getSetting('accountNo'),
+    accountName: getSetting('accountName'),
+    transferPrefix: getSetting('transferPrefix', 'PCN'),
+    storeName: getSetting('storeName', 'CHAO NGON'),
+    qrImageUrl: getSetting('qrImageUrl'),
+  }
   const allProducts = useMemo(
     () => categories.flatMap((category) => category.products),
     [categories],
@@ -297,8 +500,13 @@ export default function PosPage() {
 
   const checkoutMutation = useMutation({
     mutationFn: orderApi.create,
-    onSuccess: (order) => {
+    onSuccess: async (order) => {
+      setPaymentDialogOpen(false)
       clearCart()
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['orders'] }),
+        queryClient.invalidateQueries({ queryKey: ['current-shift'] }),
+      ])
       toast.success(`Đơn #${order.queueNumber} đã chuyển sang Đang chuẩn bị`)
       navigate('/admin/orders?tab=UNFINISHED')
     },
@@ -319,11 +527,18 @@ export default function PosPage() {
       toast.error('Giỏ hàng đang trống')
       return
     }
+    // Mở dialog chọn phương thức thanh toán
+    setPaymentDialogOpen(true)
+  }
 
+  const handleConfirmPayment = (receivedAmount?: number, paymentReference?: string) => {
     const request: OrderRequest = {
       customerName: customerName.trim() || undefined,
       customerPhone: customerPhone.trim() || undefined,
       paymentMethod,
+      receivedAmount,
+      paymentReference,
+      paymentConfirmed: true,
       note: note.trim() || undefined,
       items: items.map((item) => ({
         productId: item.productId,
@@ -352,9 +567,6 @@ export default function PosPage() {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h1 className="text-2xl font-bold">Chọn món</h1>
-              <p className="text-sm text-muted-foreground">
-                Hiển thị {products.length}/{allProducts.length} món đang kinh doanh
-              </p>
             </div>
             <Badge className="h-8 px-3" variant="secondary">
               Ca của {currentShiftQuery.data?.data?.openedByName ?? '...'}
@@ -572,7 +784,7 @@ export default function PosPage() {
           >
             {checkoutMutation.isPending
               ? <Loader2 className="h-5 w-5 animate-spin" />
-              : 'THANH TOÁN & GỬI CHẾ BIẾN'}
+              : 'THANH TOÁN'}
           </Button>
         </div>
       </aside>
@@ -582,6 +794,19 @@ export default function PosPage() {
         options={options}
         open={customizationOpen}
         onOpenChange={setCustomizationOpen}
+      />
+
+      <PaymentDialog
+        open={paymentDialogOpen}
+        onOpenChange={(open) => {
+          setPaymentDialogOpen(open)
+          if (!open) checkoutMutation.reset()
+        }}
+        totalAmount={getTotalPrice()}
+        paymentMethod={paymentMethod}
+        transferConfig={transferConfig}
+        onConfirm={handleConfirmPayment}
+        isPending={checkoutMutation.isPending}
       />
     </div>
   )

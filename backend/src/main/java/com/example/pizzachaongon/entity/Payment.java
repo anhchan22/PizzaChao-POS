@@ -5,6 +5,8 @@ import com.example.pizzachaongon.enums.PaymentStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.math.BigDecimal;
+
 @Entity
 @Table(name = "payments")
 @Getter
@@ -17,7 +19,14 @@ public class Payment extends BaseEntity {
     @JoinColumn(name = "order_id", nullable = false)
     private Order order;
 
-    private Double amount;
+    @Column(nullable = false, precision = 12, scale = 2)
+    private BigDecimal amount;
+
+    @Column(name = "received_amount", precision = 12, scale = 2)
+    private BigDecimal receivedAmount;
+
+    @Column(name = "change_amount", precision = 12, scale = 2)
+    private BigDecimal changeAmount;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -27,5 +36,6 @@ public class Payment extends BaseEntity {
     @Column(nullable = false)
     private PaymentStatus status;
 
+    @Column(name = "reference_code", length = 100)
     private String referenceCode;
 }

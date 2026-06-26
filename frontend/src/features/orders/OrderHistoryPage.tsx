@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { format } from 'date-fns'
 import {
@@ -98,6 +98,18 @@ function OrderDetailsDialog({
             <Info label="Số điện thoại" value={order.customerPhone || '—'} />
             <Info label="Nhân viên tạo" value={order.createdBy} />
             <Info label="Thời gian tạo" value={format(new Date(order.createdAt), 'dd/MM/yyyy HH:mm')} />
+            <Info
+              label="Thanh toán"
+              value={order.paymentMethod === 'CASH' ? 'Tiền mặt' : 'Chuyển khoản'}
+            />
+            {order.paymentMethod === 'CASH' ? (
+              <Info
+                label="Khách đưa / Tiền thừa"
+                value={`${currency.format(order.receivedAmount ?? order.totalAmount)} / ${currency.format(order.changeAmount ?? 0)}`}
+              />
+            ) : (
+              <Info label="Mã chuyển khoản" value={order.paymentReference || '—'} />
+            )}
           </div>
 
           {order.note && (
@@ -177,7 +189,17 @@ export default function OrderHistoryPage() {
       size: 20,
     }),
     refetchInterval: tab === 'UNFINISHED' ? 15_000 : false,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
   })
+
+  useEffect(() => {
+    const nextTab = searchParams.get('tab') as OrderQueueFilter | null
+    if (nextTab && tabs.some((item) => item.value === nextTab) && nextTab !== tab) {
+      setTab(nextTab)
+      setPage(0)
+    }
+  }, [searchParams, tab])
 
   const statusMutation = useMutation({
     mutationFn: ({
@@ -192,6 +214,7 @@ export default function OrderHistoryPage() {
     onSuccess: (_, variables) => {
       toast.success(variables.status === 'COMPLETED' ? 'Đã hoàn thành đơn' : 'Đã hủy đơn')
       queryClient.invalidateQueries({ queryKey: ['orders'] })
+      queryClient.invalidateQueries({ queryKey: ['current-shift'] })
       setCancelOrder(null)
       setCancelReason('')
     },
@@ -235,9 +258,6 @@ export default function OrderHistoryPage() {
           <FileText className="h-6 w-6 text-primary" />
           Hàng đợi đơn hàng
         </h1>
-        <p className="mt-1 text-muted-foreground">
-          Đơn mới thanh toán sẽ xuất hiện ở mục Chưa xong để nhân viên chuẩn bị.
-        </p>
       </div>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">

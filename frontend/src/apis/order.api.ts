@@ -16,6 +16,9 @@ export interface OrderRequest {
   customerName?: string
   customerPhone?: string
   paymentMethod: 'CASH' | 'TRANSFER'
+  receivedAmount?: number
+  paymentReference?: string
+  paymentConfirmed: boolean
   note?: string
   items: OrderItemRequest[]
 }
@@ -47,6 +50,9 @@ export interface OrderResponse {
   customerPhone?: string
   status: OrderStatus
   paymentMethod: 'CASH' | 'TRANSFER'
+  receivedAmount?: number
+  changeAmount?: number
+  paymentReference?: string
   totalAmount: number
   note?: string
   cancelReason?: string

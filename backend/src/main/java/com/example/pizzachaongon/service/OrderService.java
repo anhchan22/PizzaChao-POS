@@ -7,6 +7,7 @@ import com.example.pizzachaongon.dto.response.OrderItemResponse;
 import com.example.pizzachaongon.dto.response.OrderResponse;
 import com.example.pizzachaongon.entity.*;
 import com.example.pizzachaongon.enums.OrderStatus;
+import com.example.pizzachaongon.enums.PaymentMethod;
 import com.example.pizzachaongon.exception.BadRequestException;
 import com.example.pizzachaongon.exception.ResourceNotFoundException;
 import com.example.pizzachaongon.repository.*;
@@ -97,11 +98,38 @@ public class OrderService {
 
         order.setTotalAmount(totalOrderAmount);
 
-        // Tạo Payment
+        if (!Boolean.TRUE.equals(request.getPaymentConfirmed())) {
+            throw new BadRequestException("Vui lòng xác nhận thanh toán trước khi tạo đơn.");
+        }
+
+        BigDecimal receivedAmount = null;
+        BigDecimal changeAmount = null;
+        String paymentReference = null;
+
+        if (request.getPaymentMethod() == PaymentMethod.CASH) {
+            receivedAmount = request.getReceivedAmount();
+            if (receivedAmount == null) {
+                throw new BadRequestException("Vui lòng nhập số tiền khách đưa.");
+            }
+            if (receivedAmount.compareTo(totalOrderAmount) < 0) {
+                throw new BadRequestException("Số tiền khách đưa chưa đủ để thanh toán.");
+            }
+            changeAmount = receivedAmount.subtract(totalOrderAmount);
+        } else if (request.getPaymentMethod() == PaymentMethod.TRANSFER) {
+            paymentReference = normalizePaymentReference(request.getPaymentReference());
+            if (paymentReference == null) {
+                throw new BadRequestException("Thiếu mã nội dung chuyển khoản.");
+            }
+        }
+
+        // POS-03: Payment chỉ được tạo sau khi nhân viên xác nhận thanh toán.
         Payment payment = Payment.builder()
-                .amount(totalOrderAmount.doubleValue())
+                .amount(totalOrderAmount)
+                .receivedAmount(receivedAmount)
+                .changeAmount(changeAmount)
                 .paymentMethod(request.getPaymentMethod())
-                .status(PaymentStatus.COMPLETED) // Ở phase này coi như thanh toán thành công ngay
+                .status(PaymentStatus.COMPLETED)
+                .referenceCode(paymentReference)
                 .order(order)
                 .build();
         order.setPayment(payment);
@@ -193,6 +221,11 @@ public class OrderService {
         res.setCustomerPhone(order.getCustomerPhone());
         res.setStatus(order.getStatus());
         res.setPaymentMethod(order.getPaymentMethod());
+        if (order.getPayment() != null) {
+            res.setReceivedAmount(order.getPayment().getReceivedAmount());
+            res.setChangeAmount(order.getPayment().getChangeAmount());
+            res.setPaymentReference(order.getPayment().getReferenceCode());
+        }
         res.setTotalAmount(order.getTotalAmount());
         res.setNote(order.getNote());
         res.setCancelReason(order.getCancelReason());
@@ -231,5 +264,12 @@ public class OrderService {
             res.setItems(itemResList);
         }
         return res;
+    }
+
+    private String normalizePaymentReference(String reference) {
+        if (reference == null || reference.isBlank()) {
+            return null;
+        }
+        return reference.trim().toUpperCase();
     }
 }

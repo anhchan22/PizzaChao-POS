@@ -21,6 +21,7 @@ export default function OptionManagementPage() {
     queryKey: ["options"],
     queryFn: optionApi.getAll
   })
+  const optionList = Array.isArray(options) ? options : []
 
   const createMutation = useMutation({
     mutationFn: optionApi.create,
@@ -98,10 +99,10 @@ export default function OptionManagementPage() {
           <TableBody>
             {isLoading ? (
               <TableRow><TableCell colSpan={5} className="text-center">Đang tải...</TableCell></TableRow>
-            ) : options.length === 0 ? (
+            ) : optionList.length === 0 ? (
               <TableRow><TableCell colSpan={5} className="text-center">Chưa có topping nào</TableCell></TableRow>
             ) : (
-              options.map((opt, idx) => (
+              optionList.map((opt, idx) => (
                 <TableRow key={opt.id}>
                   <TableCell>{idx + 1}</TableCell>
                   <TableCell className="font-medium">{opt.name}</TableCell>

@@ -257,12 +257,20 @@ Rules:
 
 Body:
 ```json
-{ "actualCash": 1860000, "closingNote": "Thiếu 20k do trả nhầm tiền thừa" }
+{
+  "actualCash": 1860000,
+  "closingNote": "Thiếu 20k do trả nhầm tiền thừa",
+  "inventoryCounts": [
+    { "inventoryItemId": 1, "actualQuantity": 500, "note": "Đủ" },
+    { "inventoryItemId": 2, "actualQuantity": 497, "note": "Thiếu 1 cốc" }
+  ]
+}
 ```
 
 Rules:
 - Chỉ đóng ca OPEN của chính tài khoản đang đăng nhập
 - Nếu `actualCash` lệch `expectedCash` → bắt buộc nhập `closingNote`
+- `inventoryCounts` là số vật tư nhân viên đếm thực tế cuối ca; backend tự tính lệch, cập nhật tồn hiện tại và ghi lịch sử kho
 - Sau khi đóng ca không được tạo thêm đơn
 
 ---
@@ -546,18 +554,42 @@ Rules:
 
 ## Inventory API
 
-Quản lý vật tư: hộp, túi, thìa
+Quản lý vật tư ở mức theo dõi vận hành: cốc size S/M/L, nắp, túi, thìa.
+Trang kho chỉ hiển thị tồn hiện tại, trạng thái, nhập hàng và lịch sử. Logic tồn dự kiến chỉ dùng ở màn đóng ca để nhân viên đối chiếu.
 
 ### GET /inventory-items
 **Lấy danh sách vật tư**
+
+Query: `?active=true&keyword=cốc`
+
+Response gồm:
+- `currentQuantity`: tồn hiện tại đã nhập tay ở lần kiểm kê/cập nhật gần nhất
+- `estimatedUsed`: số lượng dự kiến đã dùng từ các đơn chưa hủy sau lần cập nhật tồn
+- `estimatedRemaining`: tồn dự kiến = `currentQuantity - estimatedUsed`
+- `lowStock`: `estimatedRemaining <= warningQuantity`
 
 ### POST /inventory-items
 **Tạo vật tư**
 
 Body:
 ```json
-{ "name": "Hộp nhỏ", "unit": "cái", "warningQuantity": 50 }
+{
+  "name": "Cốc size S",
+  "unit": "cái",
+  "currentQuantity": 500,
+  "warningQuantity": 80,
+  "active": true,
+  "note": "Dùng cho cháo size S",
+  "usageRules": [
+    { "sizeId": 1, "quantityPerOrder": 1 }
+  ]
+}
 ```
+
+Rules:
+- OWNER tạo/sửa/xóa vật tư và cấu hình rule.
+- `usageRules` cho biết bán size nào thì vật tư dự kiến bị dùng bao nhiêu.
+- MVP nên cấu hình trước cốc theo size; các vật tư khác có thể chỉ theo dõi bằng nhập hàng và kiểm kê cuối ca.
 
 ### GET /inventory-items/{id}
 **Xem chi tiết vật tư**
@@ -568,8 +600,35 @@ Body:
 ### PATCH /inventory-items/{id}/status
 **Bật/tắt vật tư**
 
+> Hiện implementation dùng `PUT /inventory-items/{id}` để cập nhật `active`.
+
+### POST /inventory-items/{id}/stock-in
+**Nhập hàng vào kho**
+
+Body:
+```json
+{
+  "quantity": 500,
+  "note": "Nhập 1 thùng cốc size M"
+}
+```
+
+Rules:
+- OWNER và STAFF đều có thể ghi nhận nhập hàng.
+- Mọi lần nhập hàng tạo `stock_movements` type `IN`.
+- Không có endpoint chỉnh tồn tự do; số đếm thực tế được gửi ở màn đóng ca qua `inventoryCounts`.
+
+### GET /inventory-items/{id}/movements
+**Xem lịch sử thay đổi tồn của một vật tư**
+
+Response gồm các movement type:
+- `IN`: nhập hàng
+- `OUT`: xuất/hao hụt ngoài ca
+- `AUTO_DEDUCT`: tự trừ khi bán hàng
+- `SHIFT_CLOSE_ADJUST`: điều chỉnh theo số đếm cuối ca
+
 ### DELETE /inventory-items/{id}
-**Xóa mềm vật tư**
+**Xóa vật tư**
 
 ### GET /inventory-items/low-stock
 **Lấy danh sách vật tư sắp hết**
@@ -578,36 +637,12 @@ Body:
 
 ## Stock Movement API
 
-Nhập/xuất/điều chỉnh vật tư
+Lịch sử kho được sinh từ các nghiệp vụ thật, không để nhân viên chỉnh tồn tùy tiện.
 
-### GET /stock-movements
-**Lấy lịch sử nhập/xuất kho**
-
-Query: `?inventoryItemId=1&type=IN&fromDate=2026-06-01&toDate=2026-06-22`
-
-### POST /inventory-items/{id}/stock-in
-**Nhập vật tư**
-
-Body:
-```json
-{ "quantity": 500, "unitPrice": 800, "reason": "Nhập hộp nhỏ" }
-```
-
-### POST /inventory-items/{id}/stock-out
-**Xuất/hao hụt vật tư**
-
-Body:
-```json
-{ "quantity": 20, "reason": "Hỏng/mất" }
-```
-
-### POST /inventory-items/{id}/adjust
-**Kiểm kho và điều chỉnh số lượng thực tế**
-
-Body:
-```json
-{ "actualQuantity": 430, "reason": "Kiểm kho cuối tuần" }
-```
+Implementation hiện tại:
+- `POST /inventory-items/{id}/stock-in`: nhập hàng, tạo movement `IN`.
+- `GET /inventory-items/{id}/movements`: xem lịch sử movement của vật tư.
+- `POST /shifts/close` kèm `inventoryCounts`: kiểm kê cuối ca, tạo `shift_inventory_counts` và movement `SHIFT_CLOSE_ADJUST` nếu có chênh lệch.
 
 ---
 

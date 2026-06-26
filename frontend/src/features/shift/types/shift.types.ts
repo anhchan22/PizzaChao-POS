@@ -24,6 +24,11 @@ export interface ShiftOpenRequest {
 export interface ShiftCloseRequest {
   actualCash: number
   closingNote?: string
+  inventoryCounts?: Array<{
+    inventoryItemId: number
+    actualQuantity: number
+    note?: string
+  }>
 }
 
 export interface ShiftHistoryParams {

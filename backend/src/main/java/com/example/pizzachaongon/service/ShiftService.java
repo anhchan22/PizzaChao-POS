@@ -24,6 +24,7 @@ import java.time.LocalDateTime;
 public class ShiftService {
     private final ShiftRepository shiftRepository;
     private final UserService userService;
+    private final InventoryService inventoryService;
 
     @Transactional(readOnly = true)
     public ShiftResponse getCurrentShift() {
@@ -85,6 +86,7 @@ public class ShiftService {
 
         shift.setClosingNote(closingNote);
         shift.setStatus(ShiftStatus.CLOSED);
+        inventoryService.applyShiftCloseCounts(shift, currentUser, request.getInventoryCounts());
         return mapToResponse(shiftRepository.save(shift));
     }
 

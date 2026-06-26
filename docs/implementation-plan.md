@@ -254,8 +254,8 @@ CREATE TABLE users (
 |---|------|-----------|
 | 5.1 | Enums: `ExpenseType`, `StockMovementType` | `ExpenseType` xong, `StockMovementType` làm ở nhánh inventory |
 | 5.2 | Entity `Expense` + CRUD | `expenses` — xong |
-| 5.3 | Entity `InventoryItem` + CRUD + low-stock | `inventory_items` |
-| 5.4 | Entity `StockMovement` + stock-in/out/adjust | `stock_movements` |
+| 5.3 | Entity `InventoryItem` + CRUD + low-stock | `inventory_items` — xong |
+| 5.4 | Entity `StockMovement` + nhập hàng + điều chỉnh khi đóng ca | `stock_movements`, `shift_inventory_counts` |
 | 5.5 | Entity `ActivityLog` + AOP auto-log | `activity_logs` |
 
 ### Frontend Tasks
@@ -263,13 +263,13 @@ CREATE TABLE users (
 | # | Task |
 |---|------|
 | 5.6 | Expense management (CRUD + filter + upload ảnh) — xong |
-| 5.7 | Inventory management (CRUD + cảnh báo sắp hết) |
+| 5.7 | Inventory management (CRUD + cảnh báo sắp hết) — xong |
 | 5.8 | Stock movement (nhập/xuất/kiểm kho + lịch sử) |
 | 5.9 | Activity log page (OWNER, filter) |
 
 ### Deliverables Phase 5
 - [x] Chi phí trong/ngoài ca
-- [ ] Vật tư (hộp, thìa, túi) + cảnh báo
+- [x] Vật tư (cốc, nắp, túi, thìa) + cảnh báo sắp hết
 - [ ] Nhật ký thao tác tự động
 
 ---

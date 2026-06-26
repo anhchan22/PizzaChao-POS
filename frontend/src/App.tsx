@@ -18,6 +18,7 @@ import OrderHistoryPage from "@/features/orders/OrderHistoryPage";
 import SettingsPage from "@/features/settings/SettingsPage";
 import { ShiftHistoryPage } from "@/features/shift/ShiftHistoryPage";
 import ExpenseManagementPage from "@/features/expenses/ExpenseManagementPage";
+import InventoryManagementPage from "@/features/inventory/InventoryManagementPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -51,6 +52,7 @@ function AppRoutes() {
         <Route path="/pos" element={<PosPage />} />
         <Route path="/admin/orders" element={<OrderHistoryPage />} />
         <Route path="/admin/expenses" element={<ExpenseManagementPage />} />
+        <Route path="/admin/inventory" element={<InventoryManagementPage />} />
         <Route path="/admin/settings" element={<SettingsPage />} />
         <Route
           path="/admin/shifts"

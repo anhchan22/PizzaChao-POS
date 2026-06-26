@@ -2,6 +2,7 @@ import {
   FileText,
   History,
   HomeIcon,
+  Boxes,
   PackageIcon,
   ReceiptText,
   Settings,
@@ -51,6 +52,7 @@ export const navigation: NavGroup[] = [
     items: [
       { title: 'Nhân viên', href: '/admin/users', icon: Users, roles: ['OWNER'] },
       { title: 'Chi phí', href: '/admin/expenses', icon: ReceiptText, roles: ['OWNER', 'STAFF'] },
+      { title: 'Kho vật tư', href: '/admin/inventory', icon: Boxes, roles: ['OWNER', 'STAFF'] },
       { title: 'Lịch sử ca', href: '/admin/shifts', icon: History, roles: ['OWNER'] },
       { title: 'Cài đặt', href: '/admin/settings', icon: Settings, roles: ['OWNER'] },
     ],

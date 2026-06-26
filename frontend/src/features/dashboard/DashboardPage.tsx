@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { inventoryApi } from '@/features/inventory/api/inventory.api'
 import { shiftApi } from '@/features/shift/api/shift.api'
 import { useAuthStore } from '@/stores/authStore'
 
@@ -43,6 +44,8 @@ export function DashboardPage() {
   const [actualCash, setActualCash] = useState('')
   const [openingNote, setOpeningNote] = useState('')
   const [closingNote, setClosingNote] = useState('')
+  const [inventoryCounts, setInventoryCounts] = useState<Record<number, string>>({})
+  const [inventoryNotes, setInventoryNotes] = useState<Record<number, string>>({})
 
   const currentShiftQuery = useQuery({
     queryKey: ['current-shift'],
@@ -50,6 +53,11 @@ export function DashboardPage() {
     retry: false,
     refetchOnMount: 'always',
     refetchOnWindowFocus: true,
+  })
+  const inventoryQuery = useQuery({
+    queryKey: ['inventory-items', 'close-shift'],
+    queryFn: () => inventoryApi.getAll({ active: true }),
+    enabled: closeDialog,
   })
 
   const activeShift = currentShiftQuery.data?.data ?? null
@@ -76,9 +84,12 @@ export function DashboardPage() {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['current-shift'] })
       await queryClient.invalidateQueries({ queryKey: ['shift-history'] })
+      await queryClient.invalidateQueries({ queryKey: ['inventory-items'] })
       setCloseDialog(false)
       setActualCash('')
       setClosingNote('')
+      setInventoryCounts({})
+      setInventoryNotes({})
       toast.success('Đóng ca thành công')
     },
     onError: (error) => toast.error(getErrorMessage(error, 'Không thể đóng ca')),
@@ -104,9 +115,26 @@ export function DashboardPage() {
       toast.error('Vui lòng nhập lý do khi tiền cuối ca bị chênh lệch')
       return
     }
+    const invalidInventoryCount = Object.values(inventoryCounts).some((value) =>
+      value !== '' && (!Number.isFinite(Number(value)) || Number(value) < 0),
+    )
+    if (invalidInventoryCount) {
+      toast.error('Số lượng vật tư cuối ca không hợp lệ')
+      return
+    }
     closeShiftMutation.mutate({
       actualCash: parsedActualCash,
       closingNote: closingNote.trim() || undefined,
+      inventoryCounts: Object.entries(inventoryCounts)
+        .filter(([, value]) => value !== '')
+        .map(([inventoryItemId, value]) => {
+          const id = Number(inventoryItemId)
+          return {
+            inventoryItemId: id,
+            actualQuantity: Number(value),
+            note: inventoryNotes[id]?.trim() || undefined,
+          }
+        }),
     })
   }
 
@@ -176,6 +204,8 @@ export function DashboardPage() {
                   onClick={() => {
                     setActualCash('')
                     setClosingNote('')
+                    setInventoryCounts({})
+                    setInventoryNotes({})
                     setCloseDialog(true)
                   }}
                 >
@@ -254,7 +284,7 @@ export function DashboardPage() {
       </Dialog>
 
       <Dialog open={closeDialog} onOpenChange={setCloseDialog}>
-        <DialogContent className="sm:max-w-[480px]">
+        <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-[760px]">
           <DialogHeader><DialogTitle>Đóng ca và đối soát tiền</DialogTitle></DialogHeader>
           <div className="space-y-4 py-3">
             <div className="rounded-lg bg-muted p-4 text-sm">
@@ -276,7 +306,7 @@ export function DashboardPage() {
                 step="1000"
                 value={actualCash}
                 onChange={(event) => setActualCash(event.target.value)}
-                placeholder="Nhập số tiền đã đếm trong két"
+                // placeholder="Nhập số tiền đã đếm trong két"
               />
             </div>
             {actualCash && Number.isFinite(parsedActualCash) && (
@@ -296,8 +326,73 @@ export function DashboardPage() {
                 maxLength={500}
                 value={closingNote}
                 onChange={(event) => setClosingNote(event.target.value)}
-                placeholder="Nêu lý do thừa/thiếu tiền nếu có"
+                // placeholder="Nêu lý do thừa/thiếu tiền nếu có"
               />
+            </div>
+            <div className="space-y-3 rounded-lg border p-3">
+              <div>
+                <Label>Kiểm kê vật tư cuối ca</Label>
+              </div>
+              {inventoryQuery.isLoading ? (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Đang tải vật tư...
+                </div>
+              ) : (inventoryQuery.data?.data ?? []).length === 0 ? (
+                <p className="rounded-md border border-dashed p-3 text-sm text-muted-foreground">
+                  Chưa có vật tư đang theo dõi.
+                </p>
+              ) : (
+                <div className="max-h-72 space-y-2 overflow-y-auto pr-1">
+                  {(inventoryQuery.data?.data ?? []).map((item) => (
+                    <div
+                      key={item.id}
+                      className="grid gap-3 rounded-md bg-muted/50 p-3 md:grid-cols-3 md:items-center"
+                    >
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold">{item.name}</p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          dự kiến:{" "}
+                          <span>
+                            {item.estimatedRemaining}
+                          </span>
+                        </p>
+                      </div>
+
+                      <Input
+                        type="number"
+                        min="0"
+                        step="1"
+                        value={inventoryCounts[item.id] ?? ""}
+                        onChange={(event) =>
+                          setInventoryCounts((current) => ({
+                            ...current,
+                            [item.id]: event.target.value,
+                          }))
+                        }
+                        // placeholder={`${item.estimatedRemaining}`}
+                        className="h-10 border border-border bg-background/80 text-sm shadow-sm focus-visible:border-emerald-500 focus-visible:ring-emerald-500/30"
+                      />
+
+                      <div className="text-sm">
+                        <p className="text-xs text-muted-foreground">Chênh lệch</p>
+                        <p
+                          className={
+                            inventoryCounts[item.id] &&
+                            Number(inventoryCounts[item.id]) - item.estimatedRemaining !== 0
+                              ? "font-semibold text-amber-600"
+                              : "font-semibold text-emerald-600"
+                          }
+                        >
+                          {inventoryCounts[item.id]
+                            ? Number(inventoryCounts[item.id]) - item.estimatedRemaining
+                            : "—"}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
           <DialogFooter>

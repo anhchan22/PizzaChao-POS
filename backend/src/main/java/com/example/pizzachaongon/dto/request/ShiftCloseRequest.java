@@ -4,9 +4,12 @@ import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import jakarta.validation.Valid;
 import lombok.Data;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 
 @Data
 public class ShiftCloseRequest {
@@ -18,4 +21,7 @@ public class ShiftCloseRequest {
 
     @Size(max = 500, message = "Ghi chú đóng ca không được vượt quá 500 ký tự")
     private String closingNote;
+
+    @Valid
+    private List<ShiftInventoryStocktakeRequest> inventoryCounts = new ArrayList<>();
 }

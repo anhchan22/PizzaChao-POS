@@ -1,6 +1,6 @@
-import { useState } from 'react'
+﻿import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowRight, DollarSign, Loader2, ShoppingCart, Store, TrendingUp, Users } from 'lucide-react'
+import { ArrowRight, DollarSign, Loader2, ShoppingCart, Store, TrendingUp, Receipt, AlertTriangle, Download } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -11,20 +11,20 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { inventoryApi } from '@/features/inventory/api/inventory.api'
 import { shiftApi } from '@/features/shift/api/shift.api'
-import { useAuthStore } from '@/stores/authStore'
+import { reportApi } from '@/apis/report.api'
+import { addMonths, format, isAfter, isBefore, parseISO } from 'date-fns'
+
+import { StatCard } from './components/StatCard'
+import { RevenueChart } from './components/RevenueChart'
+import { TopProductsChart } from './components/TopProductsChart'
+import { HourlySalesChart } from './components/HourlySalesChart'
+import { exportToExcel } from '@/lib/excel'
 
 const currency = new Intl.NumberFormat('vi-VN', {
   style: 'currency',
   currency: 'VND',
   maximumFractionDigits: 0,
 })
-
-const statCards = [
-  { title: 'Doanh thu hôm nay', icon: DollarSign, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
-  { title: 'Đơn hàng hôm nay', icon: ShoppingCart, color: 'text-blue-500', bg: 'bg-blue-500/10' },
-  { title: 'Nhân viên', icon: Users, color: 'text-violet-500', bg: 'bg-violet-500/10' },
-  { title: 'Tăng trưởng', icon: TrendingUp, color: 'text-amber-500', bg: 'bg-amber-500/10' },
-]
 
 function getErrorMessage(error: unknown, fallback: string) {
   if (typeof error === 'object' && error !== null && 'response' in error) {
@@ -35,9 +35,10 @@ function getErrorMessage(error: unknown, fallback: string) {
 }
 
 export function DashboardPage() {
-  const user = useAuthStore((state) => state.user)
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+
+  // Shift Dialog state
   const [openDialog, setOpenDialog] = useState(false)
   const [closeDialog, setCloseDialog] = useState(false)
   const [startingCash, setStartingCash] = useState('')
@@ -47,6 +48,47 @@ export function DashboardPage() {
   const [inventoryCounts, setInventoryCounts] = useState<Record<number, string>>({})
   const [inventoryNotes, setInventoryNotes] = useState<Record<number, string>>({})
 
+  // Dashboard date range state
+  const today = format(new Date(), 'yyyy-MM-dd')
+  const [fromDate, setFromDate] = useState(today)
+  const [toDate, setToDate] = useState(today)
+
+  const dateRangeError = useMemo(() => {
+    if (!fromDate || !toDate) return 'Vui lòng chọn đủ ngày bắt đầu và ngày kết thúc.'
+    const from = parseISO(fromDate)
+    const to = parseISO(toDate)
+    if (isBefore(to, from)) return 'Ngày kết thúc không được trước ngày bắt đầu.'
+    if (isAfter(to, addMonths(from, 1))) return 'Khoảng thời gian báo cáo tối đa là 1 tháng.'
+    return ''
+  }, [fromDate, toDate])
+
+  const isDateRangeValid = !dateRangeError
+  const rangeTitle = !fromDate || !toDate
+    ? 'Tổng quan'
+    : fromDate === toDate
+      ? `Tổng quan ngày ${format(parseISO(fromDate), 'dd/MM/yyyy')}`
+      : `Tổng quan từ ${format(parseISO(fromDate), 'dd/MM/yyyy')} đến ${format(parseISO(toDate), 'dd/MM/yyyy')}`
+
+  const handleFromDateChange = (value: string) => {
+    setFromDate(value)
+    if (value && toDate && isBefore(parseISO(toDate), parseISO(value))) {
+      setToDate(value)
+    }
+  }
+
+  const handleToDateChange = (value: string) => {
+    setToDate(value)
+    if (!fromDate || !value) return
+    const from = parseISO(fromDate)
+    const to = parseISO(value)
+    if (isBefore(to, from)) {
+      toast.error('Ngày kết thúc không được trước ngày bắt đầu.')
+    } else if (isAfter(to, addMonths(from, 1))) {
+      toast.error('Khoảng thời gian báo cáo tối đa là 1 tháng.')
+    }
+  }
+
+  // Queries
   const currentShiftQuery = useQuery({
     queryKey: ['current-shift'],
     queryFn: shiftApi.getCurrentShift,
@@ -54,12 +96,33 @@ export function DashboardPage() {
     refetchOnMount: 'always',
     refetchOnWindowFocus: true,
   })
+
   const inventoryQuery = useQuery({
     queryKey: ['inventory-items', 'close-shift'],
     queryFn: () => inventoryApi.getAll({ active: true }),
     enabled: closeDialog,
   })
 
+  // Report Queries
+  const dashboardQuery = useQuery({
+    queryKey: ['report-dashboard', fromDate, toDate],
+    queryFn: () => reportApi.getDashboard({ from: fromDate, to: toDate }),
+    enabled: isDateRangeValid,
+  })
+
+  const revenueQuery = useQuery({
+    queryKey: ['report-revenue', fromDate, toDate],
+    queryFn: () => reportApi.getRevenue({ from: fromDate, to: toDate, groupBy: 'DAY' }),
+    enabled: isDateRangeValid,
+  })
+
+  const hourlySalesQuery = useQuery({
+    queryKey: ['report-hourly', fromDate, toDate],
+    queryFn: () => reportApi.getHourlySales({ from: fromDate, to: toDate }),
+    enabled: isDateRangeValid,
+  })
+
+  // Computed for Shift
   const activeShift = currentShiftQuery.data?.data ?? null
   const parsedStartingCash = Number(startingCash)
   const parsedActualCash = Number(actualCash)
@@ -67,6 +130,7 @@ export function DashboardPage() {
     ? parsedActualCash - activeShift.expectedCash
     : 0
 
+  // Mutations for Shift
   const openShiftMutation = useMutation({
     mutationFn: shiftApi.openShift,
     onSuccess: async () => {
@@ -138,9 +202,35 @@ export function DashboardPage() {
     })
   }
 
-  return (
-    <div className="space-y-6">
+  const handleExportExcel = () => {
+    if (!dashData) {
+      toast.error('Chưa có dữ liệu để xuất')
+      return
+    }
 
+    // Prepare data for export
+    const exportData = [
+      { 'Chỉ tiêu': 'Doanh thu', 'Giá trị': dashData.todayRevenue },
+      { 'Chỉ tiêu': 'Số đơn hàng', 'Giá trị': dashData.todayOrders },
+      { 'Chỉ tiêu': 'Tiền mặt', 'Giá trị': dashData.cashRevenue },
+      { 'Chỉ tiêu': 'Chuyển khoản', 'Giá trị': dashData.transferRevenue },
+      { 'Chỉ tiêu': 'Chi phí', 'Giá trị': dashData.todayExpenses },
+      { 'Chỉ tiêu': 'Lợi nhuận ước tính', 'Giá trị': dashData.estimatedProfit },
+    ]
+
+    exportToExcel(exportData, `BaoCao_TongQuan_${fromDate}_${toDate}`)
+    toast.success('Đã xuất file Excel')
+  }
+
+  const dashData = dashboardQuery.data
+  const lowStockItems = dashData?.lowStockItems ?? []
+  const topProducts = dashData?.topProducts ?? []
+  const revenueData = revenueQuery.data ?? []
+  const hourlySalesData = hourlySalesQuery.data ?? []
+
+  return (
+    <div className="space-y-6 pb-8">
+      {/* Shift Panel */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Card className="border-primary/20 bg-primary/5 shadow-sm">
           <CardHeader className="pb-3">
@@ -227,25 +317,129 @@ export function DashboardPage() {
             )}
           </CardFooter>
         </Card>
-      </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {statCards.map(({ title, icon: Icon, color, bg }) => (
-          <Card key={title} className="border-border/50">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
-              <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${bg}`}>
-                <Icon className={`h-5 w-5 ${color}`} />
-              </div>
+        {/* Low Stock Warning Panel - only visible if there are warnings */}
+        {lowStockItems.length > 0 && (
+          <Card className="border-amber-500/50 bg-amber-500/5 shadow-sm lg:col-span-2">
+             <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-lg text-amber-700 dark:text-amber-500">
+                <AlertTriangle className="h-5 w-5" />
+                Cảnh báo sắp hết vật tư ({lowStockItems.length})
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">—</div>
-              <p className="mt-1 text-xs text-muted-foreground">Sẽ cập nhật ở module báo cáo</p>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {lowStockItems.slice(0, 4).map(item => (
+                  <div key={item.id} className="flex justify-between items-center bg-background rounded p-2 text-sm">
+                    <span className="font-medium truncate mr-2">{item.name}</span>
+                    <span className="text-amber-600 font-bold whitespace-nowrap">
+                      {item.currentQuantity} / {item.warningQuantity} {item.unit}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </CardContent>
+            <CardFooter className="pt-2 flex justify-end">
+               <Button variant="link" className="text-amber-700 dark:text-amber-500 p-0" onClick={() => navigate('/admin/inventory')}>
+                 Xem tất cả kho <ArrowRight className="ml-1 w-4 h-4" />
+               </Button>
+            </CardFooter>
           </Card>
-        ))}
+        )}
       </div>
 
+      <div className="flex flex-wrap items-center justify-between gap-3 mt-8 mb-4">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight">{rangeTitle}</h2>
+          {dateRangeError && <p className="mt-1 text-sm text-destructive">{dateRangeError}</p>}
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-2">
+            <Label htmlFor="reportFrom" className="text-xs text-muted-foreground">Từ</Label>
+            <Input
+              id="reportFrom"
+              type="date"
+              value={fromDate}
+              onChange={(e) => handleFromDateChange(e.target.value)}
+              className="h-9 w-auto"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <Label htmlFor="reportTo" className="text-xs text-muted-foreground">Đến</Label>
+            <Input
+              id="reportTo"
+              type="date"
+              value={toDate}
+              onChange={(e) => handleToDateChange(e.target.value)}
+              className="h-9 w-auto"
+            />
+          </div>
+          <Button variant="outline" size="sm" onClick={handleExportExcel} disabled={!dashData}>
+            <Download className="w-4 h-4 mr-2" />
+            Xuất Excel
+          </Button>
+        </div>
+      </div>
+
+      {/* Stats row */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        <StatCard
+          title="Tiền mặt"
+          value={dashboardQuery.isLoading ? '...' : currency.format(dashData?.cashRevenue || 0)}
+          icon={DollarSign}
+          iconColorClass="text-emerald-600"
+          iconBgClass="bg-emerald-100"
+          trendValue={12}
+        />
+        <StatCard
+          title="Chuyển khoản"
+          value={dashboardQuery.isLoading ? '...' : currency.format(dashData?.transferRevenue || 0)}
+          icon={Receipt}
+          iconColorClass="text-blue-600"
+          iconBgClass="bg-blue-100"
+          trendValue={8}
+        />
+        <StatCard
+          title="Tổng đơn hàng"
+          value={dashboardQuery.isLoading ? '...' : String(dashData?.todayOrders || 0)}
+          icon={ShoppingCart}
+          iconColorClass="text-violet-600"
+          iconBgClass="bg-violet-100"
+          trendValue={5}
+        />
+        <StatCard
+          title="Đã chi"
+          value={dashboardQuery.isLoading ? '...' : currency.format(dashData?.todayExpenses || 0)}
+          icon={TrendingUp}
+          iconColorClass="text-rose-600"
+          iconBgClass="bg-rose-100"
+          trendValue={-2}
+        />
+        <StatCard
+          title="Lợi nhuận ước tính"
+          value={dashboardQuery.isLoading ? '...' : currency.format(dashData?.estimatedProfit || 0)}
+          icon={Store}
+          iconColorClass="text-amber-600"
+          iconBgClass="bg-amber-100"
+          trendValue={15}
+        />
+      </div>
+
+      {/* Charts row */}
+      <div className="grid gap-4 lg:grid-cols-3 mt-4">
+        <div className="lg:col-span-2">
+          <RevenueChart data={revenueData} isLoading={revenueQuery.isLoading} />
+        </div>
+        <div className="lg:col-span-1">
+          <TopProductsChart data={topProducts} />
+        </div>
+      </div>
+
+      <div className="grid gap-4 mt-4">
+        <HourlySalesChart data={hourlySalesData} />
+      </div>
+
+      {/* Shift Dialogs (unchanged) */}
       <Dialog open={openDialog} onOpenChange={setOpenDialog}>
         <DialogContent className="sm:max-w-[440px]">
           <DialogHeader><DialogTitle>Mở ca làm việc</DialogTitle></DialogHeader>
@@ -306,7 +500,6 @@ export function DashboardPage() {
                 step="1000"
                 value={actualCash}
                 onChange={(event) => setActualCash(event.target.value)}
-                // placeholder="Nhập số tiền đã đếm trong két"
               />
             </div>
             {actualCash && Number.isFinite(parsedActualCash) && (
@@ -326,7 +519,6 @@ export function DashboardPage() {
                 maxLength={500}
                 value={closingNote}
                 onChange={(event) => setClosingNote(event.target.value)}
-                // placeholder="Nêu lý do thừa/thiếu tiền nếu có"
               />
             </div>
             <div className="space-y-3 rounded-lg border p-3">
@@ -370,7 +562,6 @@ export function DashboardPage() {
                             [item.id]: event.target.value,
                           }))
                         }
-                        // placeholder={`${item.estimatedRemaining}`}
                         className="h-10 border border-border bg-background/80 text-sm shadow-sm focus-visible:border-emerald-500 focus-visible:ring-emerald-500/30"
                       />
 
@@ -407,3 +598,4 @@ export function DashboardPage() {
     </div>
   )
 }
+

@@ -103,11 +103,7 @@ export default function SettingsPage() {
     <div className="mx-auto max-w-2xl space-y-6 py-8">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Cài đặt hệ thống</h1>
-        <p className="mt-2 text-muted-foreground">
-          Quản lý cấu hình chung của hệ thống bán hàng.
-        </p>
       </div>
-
       <Card>
         <CardHeader>
           <CardTitle>Cấu hình thanh toán chuyển khoản</CardTitle>

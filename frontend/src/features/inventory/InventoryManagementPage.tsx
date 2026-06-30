@@ -228,9 +228,6 @@ export default function InventoryManagementPage() {
             <Boxes className="h-7 w-7 text-primary" />
             Kho vật tư
           </h1>
-          <p className="mt-1 text-muted-foreground">
-            Xem tồn hiện tại, nhập hàng và tra lịch sử thay đổi tồn kho.
-          </p>
         </div>
         {isOwner && (
           <Button onClick={openCreate}>
@@ -238,17 +235,6 @@ export default function InventoryManagementPage() {
             Thêm vật tư
           </Button>
         )}
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Vật tư đang theo dõi</CardTitle></CardHeader>
-          <CardContent><p className="text-2xl font-black">{items.length}</p></CardContent>
-        </Card>
-        <Card className={lowStockItems.length ? 'border-amber-500/50 bg-amber-500/5' : ''}>
-          <CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Sắp hết</CardTitle></CardHeader>
-          <CardContent><p className="text-2xl font-black text-amber-600">{lowStockItems.length}</p></CardContent>
-        </Card>
       </div>
 
       <Card>
@@ -278,7 +264,7 @@ export default function InventoryManagementPage() {
           <TableHeader>
             <TableRow>
               <TableHead>Vật tư</TableHead>
-              <TableHead>Tồn hiện tại</TableHead>
+              <TableHead>Số lượng</TableHead>
               <TableHead>Đơn vị</TableHead>
               <TableHead>Trạng thái</TableHead>
               <TableHead>Cập nhật cuối</TableHead>
@@ -315,12 +301,12 @@ export default function InventoryManagementPage() {
                   <TableCell className="text-right">
                     <Button variant="outline" size="sm" onClick={() => openStockIn(item)}>
                       <PackagePlus className="mr-2 h-4 w-4" />
-                      Nhập hàng
+                      Nhập
                     </Button>
-                    <Button variant="ghost" size="sm" onClick={() => openHistory(item)}>
+                    {/* <Button variant="ghost" size="sm" onClick={() => openHistory(item)}>
                       <History className="mr-2 h-4 w-4" />
                       Lịch sử
-                    </Button>
+                    </Button> */}
                     {isOwner && (
                       <>
                         <Button variant="ghost" size="icon" onClick={() => openEdit(item)}>

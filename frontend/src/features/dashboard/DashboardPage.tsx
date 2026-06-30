@@ -1,4 +1,4 @@
-﻿import { useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ArrowRight, DollarSign, Loader2, ShoppingCart, Store, TrendingUp, Receipt, AlertTriangle, Download } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
@@ -231,7 +231,7 @@ export function DashboardPage() {
   return (
     <div className="space-y-6 pb-8">
       {/* Shift Panel */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4">
         <Card className="border-primary/20 bg-primary/5 shadow-sm">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-lg">
@@ -320,7 +320,7 @@ export function DashboardPage() {
 
         {/* Low Stock Warning Panel - only visible if there are warnings */}
         {lowStockItems.length > 0 && (
-          <Card className="border-amber-500/50 bg-amber-500/5 shadow-sm lg:col-span-2">
+          <Card className="border-amber-500/50 bg-amber-500/5 shadow-sm">
              <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-lg text-amber-700 dark:text-amber-500">
                 <AlertTriangle className="h-5 w-5" />

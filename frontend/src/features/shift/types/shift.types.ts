@@ -13,6 +13,8 @@ export interface Shift {
   cashDifference: number | null
   openingNote: string | null
   closingNote: string | null
+  workedMinutes: number | null
+  attendanceNote: string | null
   status: ShiftStatus
 }
 

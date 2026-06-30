@@ -1,8 +1,9 @@
 import {
+  Boxes,
+  CalendarClock,
   FileText,
   History,
   HomeIcon,
-  Boxes,
   PackageIcon,
   ReceiptText,
   Settings,
@@ -53,6 +54,7 @@ export const navigation: NavGroup[] = [
       { title: 'Nhân viên', href: '/admin/users', icon: Users, roles: ['OWNER'] },
       { title: 'Chi phí', href: '/admin/expenses', icon: ReceiptText, roles: ['OWNER', 'STAFF'] },
       { title: 'Kho vật tư', href: '/admin/inventory', icon: Boxes, roles: ['OWNER', 'STAFF'] },
+      { title: 'Chấm công', href: '/admin/attendance', icon: CalendarClock, roles: ['OWNER'] },
       { title: 'Lịch sử ca', href: '/admin/shifts', icon: History, roles: ['OWNER'] },
       { title: 'Cài đặt', href: '/admin/settings', icon: Settings, roles: ['OWNER'] },
     ],

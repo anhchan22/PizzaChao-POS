@@ -22,5 +22,7 @@ public class ShiftResponse {
     private BigDecimal cashDifference;
     private String openingNote;
     private String closingNote;
+    private Integer workedMinutes;
+    private String attendanceNote;
     private ShiftStatus status;
 }

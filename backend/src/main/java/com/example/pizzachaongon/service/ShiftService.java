@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -69,8 +70,18 @@ public class ShiftService {
         Shift shift = getActiveShiftEntity();
         User currentUser = userService.getCurrentUser();
 
+        LocalDateTime closedAt = LocalDateTime.now();
+        if (!closedAt.isAfter(shift.getOpenedAt())) {
+            throw new BadRequestException("Thời gian đóng ca phải sau thời gian mở ca.");
+        }
+        long workedMinutes = Duration.between(shift.getOpenedAt(), closedAt).toMinutes();
+        if (workedMinutes <= 0) {
+            throw new BadRequestException("Thời gian làm việc phải lớn hơn 0 phút.");
+        }
+
         shift.setClosedBy(currentUser);
-        shift.setClosedAt(LocalDateTime.now());
+        shift.setClosedAt(closedAt);
+        shift.setWorkedMinutes((int) workedMinutes);
         shift.setActualCash(request.getActualCash());
         if (shift.getExpectedCash() == null) {
             shift.setExpectedCash(shift.getStartingCash());
@@ -134,6 +145,8 @@ public class ShiftService {
                 .cashDifference(shift.getCashDifference())
                 .openingNote(shift.getOpeningNote())
                 .closingNote(shift.getClosingNote())
+                .workedMinutes(shift.getWorkedMinutes())
+                .attendanceNote(shift.getAttendanceNote())
                 .status(shift.getStatus())
                 .build();
     }

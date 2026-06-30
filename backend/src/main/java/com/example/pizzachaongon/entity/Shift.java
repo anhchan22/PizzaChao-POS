@@ -54,6 +54,12 @@ public class Shift extends BaseEntity {
     @Column(name = "closing_note", length = 500)
     private String closingNote;
 
+    @Column(name = "worked_minutes")
+    private Integer workedMinutes;
+
+    @Column(name = "attendance_note", length = 500)
+    private String attendanceNote;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private ShiftStatus status;

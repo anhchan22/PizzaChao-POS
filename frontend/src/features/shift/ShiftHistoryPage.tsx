@@ -47,18 +47,9 @@ export function ShiftHistoryPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Lịch sử ca làm việc</h1>
-        <p className="mt-1 text-muted-foreground">
-          Theo dõi thời gian làm việc và chênh lệch tiền cuối ca của toàn bộ nhân viên.
-        </p>
       </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <CalendarDays className="h-5 w-5" />
-            Bộ lọc
-          </CardTitle>
-        </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-3">
           <div className="space-y-2">
             <Label>Trạng thái</Label>

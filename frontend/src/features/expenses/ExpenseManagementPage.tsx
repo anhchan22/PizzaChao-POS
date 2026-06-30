@@ -188,9 +188,6 @@ export default function ExpenseManagementPage() {
             <ReceiptText className="h-7 w-7 text-primary" />
             Quản lý chi phí
           </h1>
-          <p className="mt-1 text-muted-foreground">
-            Ghi nhận các khoản mua nguyên liệu, bao bì, chi phí phát sinh.
-          </p>
         </div>
         <Button onClick={openCreate}>
           <PlusIcon className="mr-2 h-4 w-4" />

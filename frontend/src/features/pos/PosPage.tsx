@@ -561,27 +561,26 @@ export default function PosPage() {
   }
 
   return (
-    <div className="-m-4 flex h-[calc(100vh-4rem)] gap-4 overflow-hidden bg-muted/30 p-4">
+    <div className="-m-6 flex h-screen gap-4 overflow-hidden bg-muted/30 p-6">
       <section className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-2xl border bg-background shadow-sm">
         <header className="space-y-4 border-b p-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h1 className="text-2xl font-bold">Chọn món</h1>
             </div>
-            <Badge className="h-8 px-3" variant="secondary">
-              Ca của {currentShiftQuery.data?.data?.openedByName ?? '...'}
-            </Badge>
+            
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                className="h-12 w-[320px] pl-11 text-base md:w-[400px]"
+                placeholder="Tìm nhanh tên món..."
+              />
+            </div>
           </div>
 
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              className="h-12 pl-11 text-base"
-              placeholder="Tìm nhanh tên món..."
-            />
-          </div>
+
 
           <div className="flex gap-2 overflow-x-auto pb-1">
             <Button

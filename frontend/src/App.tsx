@@ -19,6 +19,8 @@ import SettingsPage from "@/features/settings/SettingsPage";
 import { ShiftHistoryPage } from "@/features/shift/ShiftHistoryPage";
 import ExpenseManagementPage from "@/features/expenses/ExpenseManagementPage";
 import InventoryManagementPage from "@/features/inventory/InventoryManagementPage";
+import AttendancePage from "@/features/attendance/AttendancePage";
+import AttendanceDetailPage from "@/features/attendance/AttendanceDetailPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -54,6 +56,14 @@ function AppRoutes() {
         <Route path="/admin/expenses" element={<ExpenseManagementPage />} />
         <Route path="/admin/inventory" element={<InventoryManagementPage />} />
         <Route path="/admin/settings" element={<SettingsPage />} />
+        <Route
+          path="/admin/attendance"
+          element={<ProtectedRoute roles={['OWNER']}><AttendancePage /></ProtectedRoute>}
+        />
+        <Route
+          path="/admin/attendance/:userId"
+          element={<ProtectedRoute roles={['OWNER']}><AttendanceDetailPage /></ProtectedRoute>}
+        />
         <Route
           path="/admin/shifts"
           element={<ProtectedRoute roles={['OWNER']}><ShiftHistoryPage /></ProtectedRoute>}

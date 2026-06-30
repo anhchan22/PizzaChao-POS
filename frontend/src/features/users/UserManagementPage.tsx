@@ -392,9 +392,6 @@ export function UserManagementPage() {
             <UsersIcon className="h-6 w-6 text-primary" />
             Quản lý nhân viên
           </h1>
-          <p className="mt-1 text-muted-foreground">
-            Quản lý tài khoản nhân viên của cửa hàng
-          </p>
         </div>
         <Button onClick={handleOpenCreate} className="gap-2">
           <Plus className="h-4 w-4" />

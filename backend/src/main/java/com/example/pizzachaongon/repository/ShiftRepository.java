@@ -10,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -33,5 +34,22 @@ public interface ShiftRepository extends JpaRepository<Shift, Long> {
             @Param("fromDate") LocalDateTime fromDate,
             @Param("toDate") LocalDateTime toDate,
             Pageable pageable
+    );
+
+    @Query("""
+            SELECT s FROM Shift s
+            JOIN FETCH s.openedBy u
+            LEFT JOIN FETCH s.closedBy
+            WHERE (:userId IS NULL OR u.id = :userId)
+              AND (:status IS NULL OR s.status = :status)
+              AND s.openedAt >= :fromDate
+              AND s.openedAt < :toDate
+            ORDER BY s.openedAt DESC
+            """)
+    List<Shift> findAttendanceShifts(
+            @Param("userId") Long userId,
+            @Param("status") ShiftStatus status,
+            @Param("fromDate") LocalDateTime fromDate,
+            @Param("toDate") LocalDateTime toDate
     );
 }

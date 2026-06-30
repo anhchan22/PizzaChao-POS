@@ -9,7 +9,9 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Repository
 public interface ExpenseRepository extends JpaRepository<Expense, Long> {
@@ -34,4 +36,10 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
             @Param("keyword") String keyword,
             Pageable pageable
     );
+
+    @Query("SELECT COALESCE(SUM(e.amount), 0) FROM Expense e WHERE e.incurredAt >= :from AND e.incurredAt < :to")
+    BigDecimal sumExpenses(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
+
+    @Query("SELECT e.type, COALESCE(SUM(e.amount), 0) FROM Expense e WHERE e.incurredAt >= :from AND e.incurredAt < :to GROUP BY e.type")
+    List<Object[]> expensesByType(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
 }

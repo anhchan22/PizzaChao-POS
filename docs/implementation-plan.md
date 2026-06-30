@@ -270,7 +270,7 @@ CREATE TABLE users (
 ### Deliverables Phase 5
 - [x] Chi phí trong/ngoài ca
 - [x] Vật tư (cốc, nắp, túi, thìa) + cảnh báo sắp hết
-- [ ] Nhật ký thao tác tự động
+- [x] Nhật ký thao tác tự động
 
 ---
 

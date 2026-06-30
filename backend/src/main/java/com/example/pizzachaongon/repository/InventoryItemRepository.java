@@ -23,4 +23,7 @@ public interface InventoryItemRepository extends JpaRepository<InventoryItem, Lo
             ORDER BY i.name ASC
             """)
     List<InventoryItem> findWithFilters(@Param("active") Boolean active, @Param("keyword") String keyword);
+
+    @Query("SELECT i FROM InventoryItem i WHERE i.active = true AND i.currentQuantity <= i.warningQuantity")
+    List<InventoryItem> findLowStock();
 }

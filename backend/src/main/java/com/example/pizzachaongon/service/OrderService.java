@@ -146,25 +146,45 @@ public class OrderService {
         return mapToResponse(savedOrder);
     }
 
-    public Page<OrderResponse> getAllOrders(String keyword, String status, Pageable pageable) {
+    public Page<OrderResponse> getAllOrders(String keyword, String status, String fromDateStr, String toDateStr, Pageable pageable) {
         String normalizedKeyword = keyword != null && !keyword.isBlank() ? keyword.trim() : null;
+        
+        LocalDateTime fromDate = null;
+        LocalDateTime toDate = null;
+        
+        if (fromDateStr != null && !fromDateStr.isBlank()) {
+            try {
+                fromDate = java.time.LocalDate.parse(fromDateStr.trim()).atStartOfDay();
+            } catch (Exception e) {
+                throw new BadRequestException("Từ ngày không đúng định dạng yyyy-MM-dd");
+            }
+        }
+        
+        if (toDateStr != null && !toDateStr.isBlank()) {
+            try {
+                toDate = java.time.LocalDate.parse(toDateStr.trim()).plusDays(1).atStartOfDay().minusNanos(1);
+            } catch (Exception e) {
+                throw new BadRequestException("Đến ngày không đúng định dạng yyyy-MM-dd");
+            }
+        }
+
         Page<Order> orders = switch (status == null ? "ALL" : status.toUpperCase()) {
             case "UNFINISHED" -> orderRepository.findByStatusesAndKeyword(
                     EnumSet.of(OrderStatus.PENDING, OrderStatus.PROCESSING),
-                    normalizedKeyword,
+                    normalizedKeyword, fromDate, toDate,
                     pageable
             );
             case "COMPLETED" -> orderRepository.findByStatusesAndKeyword(
                     EnumSet.of(OrderStatus.COMPLETED),
-                    normalizedKeyword,
+                    normalizedKeyword, fromDate, toDate,
                     pageable
             );
             case "CANCELLED" -> orderRepository.findByStatusesAndKeyword(
                     EnumSet.of(OrderStatus.CANCELLED),
-                    normalizedKeyword,
+                    normalizedKeyword, fromDate, toDate,
                     pageable
             );
-            case "ALL", "" -> orderRepository.findAllByKeyword(normalizedKeyword, pageable);
+            case "ALL", "" -> orderRepository.findAllByKeyword(normalizedKeyword, fromDate, toDate, pageable);
             default -> throw new BadRequestException("Trạng thái lọc đơn hàng không hợp lệ.");
         };
         return orders.map(this::mapToResponse);

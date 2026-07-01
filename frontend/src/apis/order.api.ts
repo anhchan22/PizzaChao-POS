@@ -79,7 +79,7 @@ export const orderApi = {
   create: (data: OrderRequest) => 
     axiosInstance.post<OrderResponse>('/orders', data).then(res => res.data),
     
-  getAll: (params?: { keyword?: string; status?: OrderQueueFilter; page?: number; size?: number }) =>
+  getAll: (params?: { keyword?: string; status?: OrderQueueFilter; fromDate?: string; toDate?: string; page?: number; size?: number }) =>
     axiosInstance.get<OrderListResponse>('/orders', { params }).then(res => res.data),
     
   getById: (id: number) => 

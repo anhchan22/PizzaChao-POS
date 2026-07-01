@@ -35,11 +35,13 @@ public class OrderController {
     public ResponseEntity<Page<OrderResponse>> getAllOrders(
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String status,
+            @RequestParam(required = false) String fromDate,
+            @RequestParam(required = false) String toDate,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size
     ) {
         PageRequest pageRequest = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
-        return ResponseEntity.ok(orderService.getAllOrders(keyword, status, pageRequest));
+        return ResponseEntity.ok(orderService.getAllOrders(keyword, status, fromDate, toDate, pageRequest));
     }
 
     @GetMapping("/{id}")

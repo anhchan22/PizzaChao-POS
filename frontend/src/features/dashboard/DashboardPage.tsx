@@ -229,7 +229,8 @@ export function DashboardPage() {
   const hourlySalesData = hourlySalesQuery.data ?? []
 
   return (
-    <div className="space-y-6 pb-8">
+    <div className="min-h-[calc(100vh-1.5rem)] rounded-2xl bg-[#d2f2e7] p-3 text-[#022c22] sm:p-4">
+      <div className="space-y-6 pb-8 rounded-2xl border border-[#e5e7eb] bg-white/90 p-4 shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
       {/* Shift Panel */}
       <div className="grid gap-4">
         <Card className="border-primary/20 bg-primary/5 shadow-sm">
@@ -350,7 +351,7 @@ export function DashboardPage() {
 
       <div className="flex flex-wrap items-center justify-between gap-3 mt-8 mb-4">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">{rangeTitle}</h2>
+          <h2 className="text-2xl font-black leading-none tracking-[-0.04em] text-[#022c22] sm:text-3xl">{rangeTitle}</h2>
           {dateRangeError && <p className="mt-1 text-sm text-destructive">{dateRangeError}</p>}
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -595,7 +596,7 @@ export function DashboardPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      </div>
     </div>
   )
 }
-

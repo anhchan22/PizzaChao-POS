@@ -44,9 +44,10 @@ export function ShiftHistoryPage() {
   const result = historyQuery.data?.data
 
   return (
-    <div className="space-y-6">
+    <div className="min-h-[calc(100vh-1.5rem)] rounded-2xl bg-[#d2f2e7] p-3 text-[#022c22] sm:p-4">
+      <div className="space-y-6 rounded-2xl border border-[#e5e7eb] bg-white/90 p-4 shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Lịch sử ca làm việc</h1>
+        <h1 className="text-2xl font-black leading-none tracking-[-0.04em] text-[#022c22] sm:text-3xl">Lịch sử ca làm việc</h1>
       </div>
 
       <Card>
@@ -242,6 +243,7 @@ export function ShiftHistoryPage() {
           )}
         </DialogContent>
       </Dialog>
+      </div>
     </div>
   )
 }

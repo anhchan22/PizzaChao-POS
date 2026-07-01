@@ -31,21 +31,31 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
                 OR LOWER(COALESCE(o.customerName, '')) LIKE LOWER(CONCAT('%', :keyword, '%'))
                 OR COALESCE(o.customerPhone, '') LIKE CONCAT('%', :keyword, '%')
               )
+              AND (cast(:fromDate as timestamp) IS NULL OR o.createdAt >= :fromDate)
+              AND (cast(:toDate as timestamp) IS NULL OR o.createdAt <= :toDate)
             """)
     Page<Order> findByStatusesAndKeyword(
             @Param("statuses") Collection<OrderStatus> statuses,
             @Param("keyword") String keyword,
+            @Param("fromDate") LocalDateTime fromDate,
+            @Param("toDate") LocalDateTime toDate,
             Pageable pageable
     );
 
     @Query("""
             SELECT o FROM Order o
-            WHERE :keyword IS NULL
+            WHERE (:keyword IS NULL
                OR LOWER(o.orderCode) LIKE LOWER(CONCAT('%', :keyword, '%'))
                OR LOWER(COALESCE(o.customerName, '')) LIKE LOWER(CONCAT('%', :keyword, '%'))
-               OR COALESCE(o.customerPhone, '') LIKE CONCAT('%', :keyword, '%')
+               OR COALESCE(o.customerPhone, '') LIKE CONCAT('%', :keyword, '%'))
+              AND (cast(:fromDate as timestamp) IS NULL OR o.createdAt >= :fromDate)
+              AND (cast(:toDate as timestamp) IS NULL OR o.createdAt <= :toDate)
             """)
-    Page<Order> findAllByKeyword(@Param("keyword") String keyword, Pageable pageable);
+    Page<Order> findAllByKeyword(
+            @Param("keyword") String keyword, 
+            @Param("fromDate") LocalDateTime fromDate,
+            @Param("toDate") LocalDateTime toDate,
+            Pageable pageable);
     
     // Tìm kiếm theo tên khách, sđt hoặc mã đơn
     Page<Order> findByOrderCodeContainingIgnoreCaseOrCustomerNameContainingIgnoreCaseOrCustomerPhoneContaining(

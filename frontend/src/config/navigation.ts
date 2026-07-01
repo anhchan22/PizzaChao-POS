@@ -1,6 +1,7 @@
 import {
   Boxes,
   CalendarClock,
+  ChartNoAxesCombined,
   FileText,
   History,
   HomeIcon,
@@ -37,6 +38,7 @@ export const navigation: NavGroup[] = [
     label: 'Tổng quan',
     items: [
       { title: 'Tổng quan', href: '/dashboard', icon: HomeIcon, roles: ['OWNER', 'STAFF'] },
+      { title: 'Thống kê', href: '/admin/analytics', icon: ChartNoAxesCombined, roles: ['OWNER'] },
     ],
   },
   {

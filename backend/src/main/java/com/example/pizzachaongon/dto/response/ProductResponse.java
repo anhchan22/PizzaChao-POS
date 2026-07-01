@@ -16,6 +16,7 @@ public class ProductResponse {
     private String imageUrl;
     private ProductStatus status;
     private BigDecimal basePrice;
+    private Long soldQuantity;
     private List<ProductVariantResponse> variants;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

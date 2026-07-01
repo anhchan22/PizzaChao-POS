@@ -118,8 +118,8 @@ public class ReportController {
         if (to.isBefore(from)) {
             throw new BadRequestException("Ngày kết thúc không được trước ngày bắt đầu.");
         }
-        if (to.isAfter(from.plusMonths(1))) {
-            throw new BadRequestException("Khoảng thời gian báo cáo tối đa là 1 tháng.");
+        if (to.isAfter(from.plusMonths(3))) {
+            throw new BadRequestException("Khoảng thời gian báo cáo tối đa là 3 tháng.");
         }
     }
 

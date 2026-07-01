@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
 import java.util.Collection;
+import java.util.List;
 
 public interface OrderItemRepository extends JpaRepository<OrderItem, Long> {
 
@@ -22,5 +23,17 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, Long> {
             @Param("sizeId") Long sizeId,
             @Param("statuses") Collection<OrderStatus> statuses,
             @Param("fromTime") LocalDateTime fromTime
+    );
+
+    @Query("""
+            SELECT oi.productId, COALESCE(SUM(oi.quantity), 0)
+            FROM OrderItem oi
+            WHERE oi.productId IN :productIds
+              AND oi.order.status NOT IN :excludedStatuses
+            GROUP BY oi.productId
+            """)
+    List<Object[]> sumSoldQuantityByProductIds(
+            @Param("productIds") Collection<Long> productIds,
+            @Param("excludedStatuses") Collection<OrderStatus> excludedStatuses
     );
 }

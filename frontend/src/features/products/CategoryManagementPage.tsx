@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { toast } from "sonner"
-import { PlusIcon, EditIcon, TrashIcon } from "lucide-react"
+import { PlusIcon, EditIcon, TrashIcon, Tags } from "lucide-react"
 
 export default function CategoryManagementPage() {
   const queryClient = useQueryClient()
@@ -75,7 +75,10 @@ export default function CategoryManagementPage() {
     <div className="min-h-[calc(100vh-1.5rem)] rounded-2xl bg-[#d2f2e7] p-3 text-[#022c22] sm:p-4">
       <div className="space-y-6 rounded-2xl border border-[#e5e7eb] bg-white/90 p-4 shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-black leading-none tracking-[-0.04em] text-[#022c22] sm:text-3xl">Danh mục sản phẩm</h1>
+        <h1 className="flex items-center gap-2 text-2xl font-black leading-none tracking-[-0.04em] text-[#022c22] sm:text-3xl">
+          <Tags className="h-7 w-7 text-[#007a55]" />
+          Danh mục sản phẩm
+        </h1>
         <Button onClick={() => {
           setEditingItem(null)
           setFormData({ name: "", description: "", sortOrder: 0, isActive: true })

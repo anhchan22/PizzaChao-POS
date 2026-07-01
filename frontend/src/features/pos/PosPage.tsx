@@ -556,7 +556,10 @@ export default function PosPage() {
         <header className="space-y-4 rounded-2xl border border-[#e5e7eb] bg-white/90 p-4 shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h1 className="text-2xl font-black leading-none tracking-[-0.04em] text-[#022c22] sm:text-3xl">Chọn món</h1>
+              <h1 className="flex items-center gap-2 text-2xl font-black leading-none tracking-[-0.04em] text-[#022c22] sm:text-3xl">
+                <ShoppingCart className="h-7 w-7 text-[#007a55]" />
+                Chọn món
+              </h1>
             </div>
             
             <div className="relative">

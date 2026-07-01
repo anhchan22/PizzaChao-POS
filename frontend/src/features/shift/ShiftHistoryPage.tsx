@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { CalendarDays, ChevronLeft, ChevronRight, Eye, Loader2 } from 'lucide-react'
+import { CalendarDays, ChevronLeft, ChevronRight, Eye, Loader2, History } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -47,7 +47,10 @@ export function ShiftHistoryPage() {
     <div className="min-h-[calc(100vh-1.5rem)] rounded-2xl bg-[#d2f2e7] p-3 text-[#022c22] sm:p-4">
       <div className="space-y-6 rounded-2xl border border-[#e5e7eb] bg-white/90 p-4 shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
       <div>
-        <h1 className="text-2xl font-black leading-none tracking-[-0.04em] text-[#022c22] sm:text-3xl">Lịch sử ca làm việc</h1>
+        <h1 className="flex items-center gap-2 text-2xl font-black leading-none tracking-[-0.04em] text-[#022c22] sm:text-3xl">
+          <History className="h-7 w-7 text-[#007a55]" />
+          Lịch sử ca làm việc
+        </h1>
       </div>
 
       <Card>

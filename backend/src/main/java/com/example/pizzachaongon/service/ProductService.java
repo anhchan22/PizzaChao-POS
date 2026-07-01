@@ -3,6 +3,7 @@ package com.example.pizzachaongon.service;
 import com.example.pizzachaongon.dto.request.ProductRequest;
 import com.example.pizzachaongon.dto.response.*;
 import com.example.pizzachaongon.entity.*;
+import com.example.pizzachaongon.enums.OrderStatus;
 import com.example.pizzachaongon.enums.ProductStatus;
 import com.example.pizzachaongon.exception.ResourceNotFoundException;
 import com.example.pizzachaongon.repository.*;
@@ -10,7 +11,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -21,11 +24,15 @@ public class ProductService {
     private final ProductCategoryRepository categoryRepository;
     private final SizeRepository sizeRepository;
     private final ProductVariantRepository variantRepository;
+    private final OrderItemRepository orderItemRepository;
 
     @Transactional(readOnly = true)
     public List<ProductResponse> getAllProducts() {
-        return productRepository.findAll().stream()
-                .map(this::mapToResponse)
+        List<Product> products = productRepository.findAll();
+        Map<Long, Long> soldQuantityByProductId = getSoldQuantityByProductId(products);
+
+        return products.stream()
+                .map(product -> mapToResponse(product, soldQuantityByProductId.getOrDefault(product.getId(), 0L)))
                 .collect(Collectors.toList());
     }
 
@@ -56,7 +63,7 @@ public class ProductService {
             }
         }
 
-        return mapToResponse(product);
+        return mapToResponse(product, 0L);
     }
 
     @Transactional
@@ -92,7 +99,8 @@ public class ProductService {
             }
         }
 
-        return mapToResponse(product);
+        Long soldQuantity = getSoldQuantityByProductId(List.of(product)).getOrDefault(product.getId(), 0L);
+        return mapToResponse(product, soldQuantity);
     }
 
     @Transactional
@@ -121,7 +129,7 @@ public class ProductService {
         }).collect(Collectors.toList());
     }
 
-    private ProductResponse mapToResponse(Product product) {
+    private ProductResponse mapToResponse(Product product, Long soldQuantity) {
         ProductResponse response = new ProductResponse();
         response.setId(product.getId());
         
@@ -135,6 +143,7 @@ public class ProductService {
         response.setImageUrl(product.getImageUrl());
         response.setStatus(product.getStatus());
         response.setBasePrice(product.getBasePrice());
+        response.setSoldQuantity(soldQuantity);
         response.setCreatedAt(product.getCreatedAt());
         response.setUpdatedAt(product.getUpdatedAt());
 
@@ -152,6 +161,26 @@ public class ProductService {
         response.setVariants(variantResponses);
 
         return response;
+    }
+
+    private Map<Long, Long> getSoldQuantityByProductId(List<Product> products) {
+        List<Long> productIds = products.stream()
+                .map(Product::getId)
+                .filter(id -> id != null)
+                .collect(Collectors.toList());
+
+        Map<Long, Long> result = new HashMap<>();
+        if (productIds.isEmpty()) {
+            return result;
+        }
+
+        for (Object[] row : orderItemRepository.sumSoldQuantityByProductIds(productIds, List.of(OrderStatus.CANCELLED))) {
+            Long productId = (Long) row[0];
+            Number soldQuantity = (Number) row[1];
+            result.put(productId, soldQuantity.longValue());
+        }
+
+        return result;
     }
 
     private PosProductResponse mapToPosProductResponse(Product product) {

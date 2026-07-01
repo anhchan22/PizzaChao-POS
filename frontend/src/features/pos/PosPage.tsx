@@ -118,17 +118,9 @@ function ProductCustomizationDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-[620px]">
-        <DialogHeader>
-          <DialogTitle className="text-2xl">{product.name}</DialogTitle>
-        </DialogHeader>
-
+      <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-[620px] rounded-2xl">
         <div className="space-y-7 py-2">
           <section className="space-y-3">
-            <div>
-              <Label className="text-base font-bold">Chọn kích cỡ</Label>
-              <p className="text-sm text-muted-foreground">Chạm vào toàn bộ ô để chọn size.</p>
-            </div>
             <div className="grid gap-3 sm:grid-cols-3">
               {product.variants.map((variant) => {
                 const selected = variant.size.id === selectedSizeId
@@ -138,10 +130,10 @@ function ProductCustomizationDialog({
                     key={variant.id}
                     onClick={() => setSelectedSizeId(variant.size.id)}
                     className={cn(
-                      'relative min-h-24 cursor-pointer rounded-xl border-2 p-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                      'relative min-h-24 cursor-pointer rounded-2xl border p-4 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                       selected
-                        ? 'border-primary bg-primary text-primary-foreground shadow-lg'
-                        : 'border-border bg-card hover:border-primary/60 hover:bg-primary/5',
+                        ? 'border-emerald-pulse bg-emerald-pulse text-white'
+                        : 'border-hairline bg-snow hover:border-emerald-pulse/60',
                     )}
                   >
                     {selected && (
@@ -161,15 +153,14 @@ function ProductCustomizationDialog({
 
           <section className="space-y-3">
             <div>
-              <Label className="text-base font-bold">Topping và tùy chọn</Label>
-              <p className="text-sm text-muted-foreground">Có thể chọn nhiều mục.</p>
+              <Label className="text-base font-bold">Topping</Label>
             </div>
             {options.length === 0 ? (
               <p className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
                 Chưa có topping đang hoạt động.
               </p>
             ) : (
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="grid gap-3 grid-cols-2 sm:grid-cols-3">
                 {options.map((option) => {
                   const selected = selectedOptionIds.includes(option.id)
                   return (
@@ -180,10 +171,10 @@ function ProductCustomizationDialog({
                       onClick={() => toggleOption(option.id)}
                       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') toggleOption(option.id) }}
                       className={cn(
-                        'flex min-h-16 cursor-pointer items-center gap-3 rounded-xl border-2 p-3 text-left transition-colors',
+                        'flex min-h-16 cursor-pointer items-center gap-3 rounded-2xl border p-3 text-left transition-all',
                         selected
-                          ? 'border-amber-500 bg-amber-500/10'
-                          : 'border-border hover:border-amber-500/60',
+                          ? 'border-jade-wash bg-mint-mist'
+                          : 'border-hairline hover:border-jade-wash/60',
                       )}
                     >
                       <Checkbox checked={selected} tabIndex={-1} />
@@ -200,48 +191,46 @@ function ProductCustomizationDialog({
             )}
           </section>
 
-          <div className="space-y-2">
-            <Label htmlFor="item-note">Ghi chú món</Label>
+          {/* <div className="space-y-2">
             <Textarea
               id="item-note"
               value={note}
               onChange={(event) => setNote(event.target.value)}
-              placeholder="Ví dụ: không hành, ít muối..."
+              placeholder="Ghi chú món..."
               maxLength={500}
             />
-          </div>
+          </div> */}
 
-          <div className="flex items-center justify-between rounded-xl bg-muted p-3">
-            <span className="font-semibold">Số lượng</span>
-            <div className="flex items-center gap-3">
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                className="h-11 w-11"
-                onClick={() => setQuantity((value) => Math.max(1, value - 1))}
-              >
-                <Minus className="h-5 w-5" />
-              </Button>
-              <span className="w-8 text-center text-xl font-bold">{quantity}</span>
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                className="h-11 w-11"
-                onClick={() => setQuantity((value) => value + 1)}
-              >
-                <Plus className="h-5 w-5" />
-              </Button>
-            </div>
-          </div>
         </div>
 
-        <DialogFooter className="border-t pt-4">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Hủy</Button>
-          <Button className="min-w-48 text-base font-bold" onClick={handleAdd}>
-            Thêm vào giỏ · {currency.format(total)}
-          </Button>
+        <DialogFooter className="flex items-center justify-between border-t pt-4 sm:justify-between">
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className="h-10 w-10 rounded-full"
+              onClick={() => setQuantity((value) => Math.max(1, value - 1))}
+            >
+              <Minus className="h-4 w-4" />
+            </Button>
+            <span className="w-6 text-center text-lg font-bold">{quantity}</span>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className="h-10 w-10 rounded-full"
+              onClick={() => setQuantity((value) => value + 1)}
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" className="rounded-full" onClick={() => onOpenChange(false)}>Hủy</Button>
+            <Button className="min-w-40 rounded-full text-base font-semibold shadow-[0_1px_2px_rgba(0,0,0,0.05)]" onClick={handleAdd}>
+              Thêm · {currency.format(total)}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -296,9 +285,9 @@ function PaymentDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md rounded-2xl">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-xl">
+          <DialogTitle className="font-heading flex items-center gap-2 text-lg font-semibold tracking-tight">
             {paymentMethod === 'CASH' ? (
               <><Banknote className="h-5 w-5 text-green-500" /> Thanh toán tiền mặt</>
             ) : (
@@ -309,7 +298,7 @@ function PaymentDialog({
 
         <div className="space-y-5 py-2">
           {/* Tổng tiền */}
-          <div className="rounded-xl bg-muted p-4 text-center">
+          <div className="rounded-2xl bg-paper p-4 text-center">
             <p className="text-sm text-muted-foreground">Tổng cần thanh toán</p>
             <p className="mt-1 text-3xl font-black text-primary">{currency.format(totalAmount)}</p>
           </div>
@@ -326,10 +315,10 @@ function PaymentDialog({
                       type="button"
                       onClick={() => setReceivedInput(String(amount))}
                       className={cn(
-                        'rounded-lg border-2 px-2 py-2 text-sm font-semibold transition-colors',
+                        'rounded-full border px-3 py-2 text-sm font-medium transition-all',
                         received === amount
-                          ? 'border-primary bg-primary text-primary-foreground'
-                          : 'border-border hover:border-primary/60',
+                          ? 'border-emerald-pulse bg-emerald-pulse text-white'
+                          : 'border-hairline hover:border-emerald-pulse/60',
                       )}
                     >
                       {currency.format(amount)}
@@ -357,11 +346,11 @@ function PaymentDialog({
               {/* Tiền thừa */}
               {received > 0 && (
                 <div className={cn(
-                  'flex items-center justify-between rounded-xl border-2 p-3',
-                  change >= 0 ? 'border-green-400 bg-green-50 dark:bg-green-950/30' : 'border-red-400 bg-red-50 dark:bg-red-950/30',
+                  'flex items-center justify-between rounded-2xl border p-3',
+                  change >= 0 ? 'border-jade-wash/40 bg-mint-mist' : 'border-destructive/30 bg-red-50',
                 )}>
                   <span className="font-semibold">Tiền thừa</span>
-                  <span className={cn('text-xl font-black', change >= 0 ? 'text-green-600' : 'text-red-500')}>
+                  <span className={cn('text-xl font-bold', change >= 0 ? 'text-pine' : 'text-destructive')}>
                     {change >= 0 ? currency.format(change) : `Thiếu ${currency.format(-change)}`}
                   </span>
                 </div>
@@ -400,7 +389,7 @@ function PaymentDialog({
             Hủy
           </Button>
           <Button
-            className="flex-1 h-12 text-base font-bold"
+            className="flex-1 h-12 rounded-full text-base font-semibold"
             disabled={!canConfirm || isPending}
             onClick={() => onConfirm(
               paymentMethod === 'CASH' ? received : undefined,
@@ -561,12 +550,13 @@ export default function PosPage() {
   }
 
   return (
-    <div className="-m-6 flex h-screen gap-4 overflow-hidden bg-muted/30 p-6">
-      <section className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-2xl border bg-background shadow-sm">
-        <header className="space-y-4 border-b p-4">
+    <div className="flex h-[calc(100vh-1rem)] rounded-2xl bg-[#d2f2e7] p-3 text-[#022c22] sm:p-4">
+      <div className="flex w-full gap-3 overflow-hidden">
+        <section className="flex min-w-0 flex-1 flex-col gap-3">
+        <header className="space-y-4 rounded-2xl border border-[#e5e7eb] bg-white/90 p-4 shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h1 className="text-2xl font-bold">Chọn món</h1>
+              <h1 className="text-2xl font-black leading-none tracking-[-0.04em] text-[#022c22] sm:text-3xl">Chọn món</h1>
             </div>
             
             <div className="relative">
@@ -574,26 +564,24 @@ export default function PosPage() {
               <Input
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
-                className="h-12 w-[320px] pl-11 text-base md:w-[400px]"
+                className="h-11 w-[320px] rounded-full border-hairline pl-11 text-sm md:w-[400px]"
                 placeholder="Tìm nhanh tên món..."
               />
             </div>
           </div>
 
-
-
           <div className="flex gap-2 overflow-x-auto pb-1">
             <Button
-              className="min-h-11 shrink-0 rounded-full px-5"
+              className="min-h-10 shrink-0 rounded-full px-5 text-sm"
               variant={categoryId === 'ALL' ? 'default' : 'outline'}
               onClick={() => setCategoryId('ALL')}
             >
-              Tất cả món
+              Tất cả 
             </Button>
             {categories.map((category) => (
               <Button
                 key={category.id}
-                className="min-h-11 shrink-0 rounded-full px-5"
+                className="min-h-10 shrink-0 rounded-full px-5 text-sm"
                 variant={categoryId === category.id ? 'default' : 'outline'}
                 onClick={() => setCategoryId(category.id)}
               >
@@ -603,7 +591,7 @@ export default function PosPage() {
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto p-4">
+        <div className="flex-1 overflow-y-auto rounded-2xl border border-[#e5e7eb] bg-white/90 p-4 shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
           {productsQuery.isLoading ? (
             <div className="flex h-full items-center justify-center">
               <Loader2 className="h-8 w-8 animate-spin" />
@@ -614,7 +602,7 @@ export default function PosPage() {
               <p>Không tìm thấy món phù hợp.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
               {products.map((product) => {
                 const prices = product.variants.map((variant) => variant.price)
                 const lowestPrice = prices.length ? Math.min(...prices) : product.basePrice
@@ -624,39 +612,30 @@ export default function PosPage() {
                     key={product.id}
                     onClick={() => openProduct(product)}
                     className={cn(
-                      'group flex min-h-56 cursor-pointer flex-col overflow-hidden rounded-2xl border-2 bg-card text-left transition-colors hover:border-primary hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                      'group flex cursor-pointer flex-col overflow-hidden rounded-[16px] border border-pale-sage bg-snow text-left transition-all hover:border-emerald-pulse hover:shadow-[0_4px_12px_rgba(0,188,125,0.3)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                       product.status === 'SOLD_OUT' && 'opacity-60 grayscale',
                     )}
                   >
-                    <div className="relative aspect-[4/3] bg-muted">
+                    <div className="relative w-full pb-[100%] bg-paper overflow-hidden">
                       {product.imageUrl ? (
                         <img
                           src={product.imageUrl}
                           alt={product.name}
-                          className="h-full w-full object-cover"
+                          className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                         />
                       ) : (
-                        <div className="flex h-full items-center justify-center">
-                          <Utensils className="h-10 w-10 text-muted-foreground/50" />
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <Utensils className="h-10 w-10 text-graphite/40" />
                         </div>
                       )}
                       {product.status === 'SOLD_OUT' && (
-                        <Badge variant="destructive" className="absolute left-3 top-3">Tạm hết</Badge>
+                        <Badge variant="destructive" className="absolute left-2 top-2 z-10">Tạm hết</Badge>
                       )}
                     </div>
-                    <div className="flex flex-1 flex-col p-4">
-                      <h2 className="line-clamp-2 text-base font-bold">{product.name}</h2>
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        {product.variants.map((variant) => variant.size.name).join(' · ')}
-                      </p>
-                      <div className="mt-auto flex items-end justify-between pt-4">
-                        <span>
-                          <span className="block text-xs text-muted-foreground">Từ</span>
-                          <span className="text-lg font-bold text-primary">{currency.format(lowestPrice)}</span>
-                        </span>
-                        <span className="rounded-full bg-primary/10 p-2 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
-                          <ChevronRight className="h-5 w-5" />
-                        </span>
+                    <div className="flex flex-1 flex-col p-3.5 pt-3">
+                      <h2 className="line-clamp-2 text-[15px] font-bold leading-snug text-forest-ink">{product.name}</h2>
+                      <div className="mt-1.5 flex items-end">
+                        <span className="text-[16px] font-bold text-pine">{currency.format(lowestPrice)}</span>
                       </div>
                     </div>
                   </button>
@@ -667,8 +646,8 @@ export default function PosPage() {
         </div>
       </section>
 
-      <aside className="flex w-[390px] shrink-0 flex-col overflow-hidden rounded-2xl border bg-background shadow-sm">
-        <header className="flex items-center justify-between bg-primary p-4 text-primary-foreground">
+      <aside className="flex w-[390px] shrink-0 flex-col overflow-hidden rounded-2xl border border-[#e5e7eb] bg-white/90 shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
+        <header className="flex items-center justify-between bg-[#00bc7d] p-4 text-white">
           <div className="flex items-center gap-2 text-lg font-bold">
             <ShoppingCart className="h-5 w-5" />
             Giỏ hàng
@@ -678,7 +657,7 @@ export default function PosPage() {
           </Badge>
         </header>
 
-        <div className="flex-1 space-y-3 overflow-y-auto bg-muted/20 p-3">
+        <div className="flex-1 space-y-3 overflow-y-auto p-3">
           {items.length === 0 ? (
             <div className="flex h-full flex-col items-center justify-center text-muted-foreground">
               <ShoppingCart className="mb-3 h-12 w-12 opacity-40" />
@@ -688,50 +667,57 @@ export default function PosPage() {
             items.map((item) => {
               const unitTotal = item.unitPrice + item.options.reduce((sum, option) => sum + option.price, 0)
               return (
-                <article key={item.id} className="rounded-xl border bg-card p-3 shadow-sm">
-                  <div className="flex justify-between gap-3">
-                    <div className="min-w-0">
-                      <h3 className="font-bold">{item.productName}</h3>
-                      <Badge variant="outline" className="mt-1">{item.sizeName}</Badge>
+                <article key={item.id} className="rounded-[16px] border border-hairline bg-snow p-3">
+                  <div className="flex items-start gap-2">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="font-bold leading-tight">{item.productName}</h3>
+                        <span className="rounded-full border border-hairline bg-paper px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
+                          {item.sizeName}
+                        </span>
+                      </div>
+                      
                       {item.options.length > 0 && (
-                        <p className="mt-2 text-xs text-muted-foreground">
+                        <p className="mt-1 text-xs text-muted-foreground">
                           {item.options.map((option) => option.optionName).join(', ')}
                         </p>
                       )}
                       {item.note && <p className="mt-1 text-xs font-medium text-amber-600">{item.note}</p>}
+                      
+                      <div className="mt-2.5 flex items-center justify-between">
+                        <div className="flex items-center gap-1.5">
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-7 w-7 rounded-full border-hairline bg-paper hover:border-emerald-pulse hover:bg-snow"
+                            onClick={() => item.quantity === 1
+                              ? removeItem(item.id)
+                              : updateQuantity(item.id, item.quantity - 1)}
+                          >
+                            <Minus className="h-3 w-3" />
+                          </Button>
+                          <span className="w-6 text-center text-sm font-bold">{item.quantity}</span>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-7 w-7 rounded-full border-hairline bg-paper hover:border-emerald-pulse hover:bg-snow"
+                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                          >
+                            <Plus className="h-3 w-3" />
+                          </Button>
+                        </div>
+                        <span className="text-[15px] font-bold text-pine">{currency.format(unitTotal * item.quantity)}</span>
+                      </div>
                     </div>
+                    
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-9 w-9 shrink-0 text-destructive"
+                      className="-mr-1 -mt-1 h-8 w-8 shrink-0 rounded-full text-destructive/60 hover:bg-red-50 hover:text-destructive"
                       onClick={() => removeItem(item.id)}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
-                  </div>
-                  <div className="mt-3 flex items-center justify-between border-t pt-3">
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="h-10 w-10"
-                        onClick={() => item.quantity === 1
-                          ? removeItem(item.id)
-                          : updateQuantity(item.id, item.quantity - 1)}
-                      >
-                        <Minus className="h-4 w-4" />
-                      </Button>
-                      <span className="w-6 text-center font-bold">{item.quantity}</span>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="h-10 w-10"
-                        onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                      >
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    <span className="font-bold">{currency.format(unitTotal * item.quantity)}</span>
                   </div>
                 </article>
               )
@@ -739,7 +725,7 @@ export default function PosPage() {
           )}
         </div>
 
-        <div className="space-y-3 border-t p-4">
+        <div className="space-y-3 border-t border-hairline p-4">
           <div className="grid grid-cols-2 gap-2">
             <Input
               value={customerName}
@@ -760,13 +746,23 @@ export default function PosPage() {
           />
           <div className="grid grid-cols-2 gap-2">
             <Button
-              variant={paymentMethod === 'CASH' ? 'default' : 'outline'}
+              className={cn(
+                paymentMethod === 'CASH'
+                  ? "border-transparent bg-emerald-pulse text-white hover:bg-emerald-pulse/90"
+                  : "border-jade-wash text-pine hover:bg-mint-mist"
+              )}
+              variant="outline"
               onClick={() => setPaymentMethod('CASH')}
             >
               Tiền mặt
             </Button>
             <Button
-              variant={paymentMethod === 'TRANSFER' ? 'default' : 'outline'}
+              className={cn(
+                paymentMethod === 'TRANSFER'
+                  ? "border-transparent bg-emerald-pulse text-white hover:bg-emerald-pulse/90"
+                  : "border-jade-wash text-pine hover:bg-mint-mist"
+              )}
+              variant="outline"
               onClick={() => setPaymentMethod('TRANSFER')}
             >
               Chuyển khoản
@@ -777,7 +773,7 @@ export default function PosPage() {
             <span className="text-2xl font-black text-primary">{currency.format(getTotalPrice())}</span>
           </div>
           <Button
-            className="h-14 w-full text-base font-black"
+            className="h-14 w-full rounded-full text-base font-semibold shadow-[0_1px_2px_rgba(0,0,0,0.05)]"
             disabled={items.length === 0 || checkoutMutation.isPending}
             onClick={handleCheckout}
           >
@@ -807,6 +803,7 @@ export default function PosPage() {
         onConfirm={handleConfirmPayment}
         isPending={checkoutMutation.isPending}
       />
+      </div>
     </div>
   )
 }

@@ -134,16 +134,17 @@ export default function ProductManagementPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="min-h-[calc(100vh-1.5rem)] rounded-2xl bg-[#d2f2e7] p-3 text-[#022c22] sm:p-4">
+      <div className="space-y-6 rounded-2xl border border-[#e5e7eb] bg-white/90 p-4 shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold tracking-tight">Sản phẩm / Món ăn</h1>
+        <h1 className="text-2xl font-black leading-none tracking-[-0.04em] text-[#022c22] sm:text-3xl">Sản phẩm / Món ăn</h1>
         <Button onClick={openNew}>
           <PlusIcon className="mr-2 h-4 w-4" />
           Thêm Món Mới
         </Button>
       </div>
 
-      <div className="border rounded-md">
+      <div className="overflow-hidden rounded-md border">
         <Table>
           <TableHeader>
             <TableRow>
@@ -310,6 +311,7 @@ export default function ProductManagementPage() {
           </form>
         </DialogContent>
       </Dialog>
+      </div>
     </div>
   )
 }

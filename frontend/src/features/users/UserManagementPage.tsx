@@ -384,11 +384,12 @@ export function UserManagementPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="min-h-[calc(100vh-1.5rem)] rounded-2xl bg-[#d2f2e7] p-3 text-[#022c22] sm:p-4">
+      <div className="space-y-6 rounded-2xl border border-[#e5e7eb] bg-white/90 p-4 shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
       {/* Page header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+          <h1 className="flex items-center gap-2 text-2xl font-black leading-none tracking-[-0.04em] text-[#022c22] sm:text-3xl">
             <UsersIcon className="h-6 w-6 text-primary" />
             Quản lý nhân viên
           </h1>
@@ -576,6 +577,7 @@ export function UserManagementPage() {
         onOpenChange={setResetPwOpen}
         user={resetPwUser}
       />
+      </div>
     </div>
   )
 }

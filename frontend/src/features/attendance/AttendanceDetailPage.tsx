@@ -81,20 +81,18 @@ export default function AttendanceDetailPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="min-h-[calc(100vh-1.5rem)] rounded-2xl bg-[#d2f2e7] p-3 text-[#022c22] sm:p-4">
+      <div className="space-y-6 rounded-2xl border border-[#e5e7eb] bg-white/90 p-4 shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <Button variant="ghost" className="mb-2 px-0" onClick={() => navigate('/admin/attendance')}>
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Quay lại bảng chấm công
+            Quay lại 
           </Button>
-          <h1 className="flex items-center gap-2 text-3xl font-bold tracking-tight">
+          <h1 className="flex items-center gap-2 text-2xl font-black leading-none tracking-[-0.04em] text-[#022c22] sm:text-3xl">
             <UserRound className="h-7 w-7 text-primary" />
             {detail?.user.fullName ?? 'Chi tiết chấm công'}
           </h1>
-          <p className="mt-1 text-muted-foreground">
-            Xem từng ca làm, doanh thu theo ca và ghi chú chấm công của nhân viên.
-          </p>
         </div>
       </div>
 
@@ -284,6 +282,7 @@ export default function AttendanceDetailPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      </div>
     </div>
   )
 }

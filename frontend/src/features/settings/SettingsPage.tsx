@@ -100,9 +100,10 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6 py-8">
+    <div className="min-h-[calc(100vh-1.5rem)] rounded-2xl bg-[#d2f2e7] p-3 text-[#022c22] sm:p-4">
+      <div className="mx-auto max-w-2xl space-y-6 rounded-2xl border border-[#e5e7eb] bg-white/90 p-4 shadow-[0_1px_2px_rgba(0,0,0,0.05)] py-8">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Cài đặt hệ thống</h1>
+        <h1 className="text-2xl font-black leading-none tracking-[-0.04em] text-[#022c22] sm:text-3xl">Cài đặt hệ thống</h1>
       </div>
       <Card>
         <CardHeader>
@@ -207,6 +208,7 @@ export default function SettingsPage() {
           </div>
         </CardContent>
       </Card>
+      </div>
     </div>
   )
 }

@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils'
 
 export function AppLayout() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  
 
   return (
     <div className="min-h-screen bg-background">
@@ -18,7 +19,7 @@ export function AppLayout() {
           sidebarCollapsed ? 'ml-[68px]' : 'ml-[240px]'
         )}
       >
-        <main className="p-6">
+          <main className="p-3">
           <Outlet />
         </main>
       </div>

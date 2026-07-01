@@ -40,6 +40,9 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
     @Query("SELECT COALESCE(SUM(e.amount), 0) FROM Expense e WHERE e.incurredAt >= :from AND e.incurredAt < :to")
     BigDecimal sumExpenses(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
 
+    @Query("SELECT COALESCE(SUM(e.amount), 0) FROM Expense e WHERE e.shift.id = :shiftId")
+    BigDecimal sumExpensesByShiftId(@Param("shiftId") Long shiftId);
+
     @Query("SELECT e.type, COALESCE(SUM(e.amount), 0) FROM Expense e WHERE e.incurredAt >= :from AND e.incurredAt < :to GROUP BY e.type")
     List<Object[]> expensesByType(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
 }

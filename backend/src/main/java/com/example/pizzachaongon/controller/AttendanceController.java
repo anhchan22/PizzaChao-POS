@@ -32,7 +32,7 @@ public class AttendanceController {
     }
 
     @GetMapping("/users/{userId}")
-    @PreAuthorize("hasRole('OWNER')")
+    @PreAuthorize("hasAnyRole('OWNER', 'STAFF')")
     public ApiResponse<EmployeeAttendanceDetailResponse> getEmployeeDetail(
             @PathVariable Long userId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,

@@ -3,7 +3,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Banknote,
   Check,
-  ChevronRight,
   Loader2,
   Minus,
   Plus,
@@ -495,6 +494,8 @@ export default function PosPage() {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['orders'] }),
         queryClient.invalidateQueries({ queryKey: ['current-shift'] }),
+        queryClient.invalidateQueries({ queryKey: ['report-dashboard'] }),
+        queryClient.invalidateQueries({ queryKey: ['recent-orders'] }),
       ])
       toast.success(`Đơn #${order.queueNumber} đã chuyển sang Đang chuẩn bị`)
       navigate('/admin/orders?tab=UNFINISHED')

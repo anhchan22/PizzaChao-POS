@@ -44,10 +44,10 @@ export const navigation: NavGroup[] = [
   {
     label: 'Thực đơn',
     items: [
-      { title: 'Danh mục', href: '/admin/categories', icon: PackageIcon, roles: ['OWNER'] },
-      { title: 'Kích cỡ', href: '/admin/sizes', icon: PackageIcon, roles: ['OWNER'] },
+      { title: 'Danh mục', href: '/admin/categories', icon: PackageIcon, roles: ['OWNER', 'STAFF'] },
+      { title: 'Kích cỡ', href: '/admin/sizes', icon: PackageIcon, roles: ['OWNER', 'STAFF'] },
       { title: 'Topping', href: '/admin/options', icon: PackageIcon, roles: ['OWNER'] },
-      { title: 'Món ăn', href: '/admin/products', icon: PackageIcon, roles: ['OWNER'] },
+      { title: 'Món ăn', href: '/admin/products', icon: PackageIcon, roles: ['OWNER', 'STAFF'] },
     ],
   },
   {
@@ -56,7 +56,7 @@ export const navigation: NavGroup[] = [
       { title: 'Nhân viên', href: '/admin/users', icon: Users, roles: ['OWNER'] },
       { title: 'Chi phí', href: '/admin/expenses', icon: ReceiptText, roles: ['OWNER', 'STAFF'] },
       { title: 'Kho vật tư', href: '/admin/inventory', icon: Boxes, roles: ['OWNER', 'STAFF'] },
-      { title: 'Chấm công', href: '/admin/attendance', icon: CalendarClock, roles: ['OWNER'] },
+      { title: 'Chấm công', href: '/admin/attendance', icon: CalendarClock, roles: ['OWNER', 'STAFF'] },
       { title: 'Lịch sử ca', href: '/admin/shifts', icon: History, roles: ['OWNER'] },
       { title: 'Cài đặt', href: '/admin/settings', icon: Settings, roles: ['OWNER'] },
     ],

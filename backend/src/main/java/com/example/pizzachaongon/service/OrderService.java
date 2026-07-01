@@ -146,7 +146,7 @@ public class OrderService {
         return mapToResponse(savedOrder);
     }
 
-    public Page<OrderResponse> getAllOrders(String keyword, String status, String fromDateStr, String toDateStr, Pageable pageable) {
+    public Page<OrderResponse> getAllOrders(String keyword, String status, String fromDateStr, String toDateStr, Long shiftId, Pageable pageable) {
         String normalizedKeyword = keyword != null && !keyword.isBlank() ? keyword.trim() : null;
         
         LocalDateTime fromDate = null;
@@ -171,20 +171,20 @@ public class OrderService {
         Page<Order> orders = switch (status == null ? "ALL" : status.toUpperCase()) {
             case "UNFINISHED" -> orderRepository.findByStatusesAndKeyword(
                     EnumSet.of(OrderStatus.PENDING, OrderStatus.PROCESSING),
-                    normalizedKeyword, fromDate, toDate,
+                    normalizedKeyword, fromDate, toDate, shiftId,
                     pageable
             );
             case "COMPLETED" -> orderRepository.findByStatusesAndKeyword(
                     EnumSet.of(OrderStatus.COMPLETED),
-                    normalizedKeyword, fromDate, toDate,
+                    normalizedKeyword, fromDate, toDate, shiftId,
                     pageable
             );
             case "CANCELLED" -> orderRepository.findByStatusesAndKeyword(
                     EnumSet.of(OrderStatus.CANCELLED),
-                    normalizedKeyword, fromDate, toDate,
+                    normalizedKeyword, fromDate, toDate, shiftId,
                     pageable
             );
-            case "ALL", "" -> orderRepository.findAllByKeyword(normalizedKeyword, fromDate, toDate, pageable);
+            case "ALL", "" -> orderRepository.findAllByKeyword(normalizedKeyword, fromDate, toDate, shiftId, pageable);
             default -> throw new BadRequestException("Trạng thái lọc đơn hàng không hợp lệ.");
         };
         return orders.map(this::mapToResponse);

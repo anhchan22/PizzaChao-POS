@@ -174,20 +174,18 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             {collapsed ? (
-              <Tooltip delayDuration={0}>
-                <TooltipTrigger asChild>
-                  <Button variant="ghost" className="w-full justify-center p-2 h-auto">
-                    <Avatar className="h-8 w-8 ring-2 ring-primary/20">
-                      <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
-                        {initials}
-                      </AvatarFallback>
-                    </Avatar>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="right" sideOffset={10}>
-                  {user?.fullName}
-                </TooltipContent>
-              </Tooltip>
+              <Button
+                variant="ghost"
+                className="w-full justify-center p-2 h-auto"
+                aria-label="Mở thông tin tài khoản"
+                title={user?.fullName}
+              >
+                <Avatar className="h-8 w-8 ring-2 ring-primary/20">
+                  <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
+                    {initials}
+                  </AvatarFallback>
+                </Avatar>
+              </Button>
             ) : (
               <Button variant="ghost" className="w-full justify-start gap-3 px-3 py-2.5 h-auto">
                 <Avatar className="h-8 w-8 shrink-0 ring-2 ring-primary/20">

@@ -9,9 +9,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
 import { PlusIcon, EditIcon, TrashIcon, Ruler } from "lucide-react"
+import { useAuthStore } from "@/stores/authStore"
 
 export default function SizeManagementPage() {
   const queryClient = useQueryClient()
+  const user = useAuthStore((state) => state.user)
+  const isOwner = user?.role === 'OWNER'
   const [isOpen, setIsOpen] = useState(false)
   const [editingItem, setEditingItem] = useState<Size | null>(null)
   const [formData, setFormData] = useState<SizeRequest>({ name: "", description: "" })
@@ -25,6 +28,7 @@ export default function SizeManagementPage() {
     mutationFn: sizeApi.create,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["sizes"] })
+      queryClient.invalidateQueries({ queryKey: ["pos-products"] })
       toast.success("Tạo kích cỡ thành công")
       setIsOpen(false)
     },
@@ -35,6 +39,7 @@ export default function SizeManagementPage() {
     mutationFn: ({ id, data }: { id: number, data: SizeRequest }) => sizeApi.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["sizes"] })
+      queryClient.invalidateQueries({ queryKey: ["pos-products"] })
       toast.success("Cập nhật thành công")
       setIsOpen(false)
     },
@@ -45,6 +50,7 @@ export default function SizeManagementPage() {
     mutationFn: sizeApi.delete,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["sizes"] })
+      queryClient.invalidateQueries({ queryKey: ["pos-products"] })
       toast.success("Xóa kích cỡ thành công")
     },
     onError: () => toast.error("Không thể xóa kích cỡ này")
@@ -76,14 +82,16 @@ export default function SizeManagementPage() {
           <Ruler className="h-7 w-7 text-[#007a55]" />
           Quản lý kích cỡ
         </h1>
-        <Button onClick={() => {
-          setEditingItem(null)
-          setFormData({ name: "", description: "" })
-          setIsOpen(true)
-        }}>
-          <PlusIcon className="mr-2 h-4 w-4" />
-          Thêm kích cỡ
-        </Button>
+        {isOwner && (
+          <Button onClick={() => {
+            setEditingItem(null)
+            setFormData({ name: "", description: "" })
+            setIsOpen(true)
+          }}>
+            <PlusIcon className="mr-2 h-4 w-4" />
+            Thêm kích cỡ
+          </Button>
+        )}
       </div>
 
       <div className="overflow-hidden rounded-md border">
@@ -93,30 +101,32 @@ export default function SizeManagementPage() {
               <TableHead>STT</TableHead>
               <TableHead>Tên (S, M, L, Nhỏ, Lớn...)</TableHead>
               <TableHead>Mô tả</TableHead>
-              <TableHead className="text-right">Thao tác</TableHead>
+              {isOwner && <TableHead className="text-right">Thao tác</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow><TableCell colSpan={4} className="text-center">Đang tải...</TableCell></TableRow>
+              <TableRow><TableCell colSpan={isOwner ? 4 : 3} className="text-center">Đang tải...</TableCell></TableRow>
             ) : sizes.length === 0 ? (
-              <TableRow><TableCell colSpan={4} className="text-center">Chưa có kích cỡ nào</TableCell></TableRow>
+              <TableRow><TableCell colSpan={isOwner ? 4 : 3} className="text-center">Chưa có kích cỡ nào</TableCell></TableRow>
             ) : (
               sizes.map((sz, idx) => (
                 <TableRow key={sz.id}>
                   <TableCell>{idx + 1}</TableCell>
                   <TableCell className="font-medium">{sz.name}</TableCell>
                   <TableCell>{sz.description}</TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="icon" onClick={() => openEdit(sz)}>
-                      <EditIcon className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" onClick={() => {
-                      if (confirm("Bạn có chắc muốn xóa?")) deleteMutation.mutate(sz.id)
-                    }}>
-                      <TrashIcon className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </TableCell>
+                  {isOwner && (
+                    <TableCell className="text-right">
+                      <Button variant="ghost" size="icon" onClick={() => openEdit(sz)}>
+                        <EditIcon className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => {
+                        if (confirm("Bạn có chắc muốn xóa?")) deleteMutation.mutate(sz.id)
+                      }}>
+                        <TrashIcon className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </TableCell>
+                  )}
                 </TableRow>
               ))
             )}

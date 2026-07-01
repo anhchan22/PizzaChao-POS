@@ -3,7 +3,6 @@ import { useQuery } from '@tanstack/react-query'
 import {
   Banknote,
   CalendarDays,
-  ChartNoAxesCombined,
   ReceiptText,
   ShoppingCart,
   TrendingUp,
@@ -296,14 +295,14 @@ export default function AnalyticsPage() {
               <MiniStat label="Số đơn hủy" value={String(cancelQuery.data?.totalCancelled ?? 0)} />
               <MiniStat label="Doanh thu mất" value={currency.format(cancelQuery.data?.totalLostRevenue ?? 0)} danger />
             </div>
-            <div className="mt-3 space-y-2">
+            {/* <div className="mt-3 space-y-2">
               {(cancelQuery.data?.topReasons ?? []).slice(0, 5).map((reason) => (
                 <div key={reason.reason} className="flex items-center justify-between rounded-xl border border-[#e5e7eb] bg-white px-3 py-2 text-sm">
                   <span className="truncate text-[#022c22]">{reason.reason}</span>
                   <span className="rounded-full bg-red-50 px-2 py-0.5 text-xs font-bold text-red-700">{reason.count}</span>
                 </div>
               ))}
-            </div>
+            </div> */}
           </AnalyticsCard>
         </section>
       </div>
@@ -358,7 +357,6 @@ function RevenueBarChart({ data }: { data: Array<{ label: string; displayLabel: 
   if (data.length === 0) return <EmptyChart />
 
   const max = Math.max(...data.map((item) => item.value), 0)
-  const total = data.reduce((sum, item) => sum + item.value, 0)
   const best = data.reduce((currentBest, item) => item.value > currentBest.value ? item : currentBest, data[0])
 
   return (
@@ -525,12 +523,6 @@ function buildStaffPerformance(shifts: ShiftSummary[]) {
       averageRevenuePerShift: item.shiftCount > 0 ? item.revenue / item.shiftCount : 0,
     }))
     .sort((a, b) => b.revenue - a.revenue)
-}
-
-function compactMoney(value: number) {
-  if (value >= 1_000_000) return `${Math.round(value / 1_000_000)}tr`
-  if (value >= 1_000) return `${Math.round(value / 1_000)}k`
-  return String(value)
 }
 
 function cancelRate(cancelled: number, completed: number) {

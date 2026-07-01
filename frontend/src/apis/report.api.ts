@@ -77,7 +77,7 @@ export interface ReportRangeParams {
 }
 
 export const reportApi = {
-  getDashboard: (params?: Partial<ReportRangeParams> & { date?: string }) =>
+  getDashboard: (params?: Partial<ReportRangeParams> & { date?: string; shiftId?: number }) =>
     axiosInstance.get<DashboardData>('/reports/dashboard', { params }).then(r => r.data),
 
   getRevenue: (params: { from: string; to: string; groupBy?: 'DAY' | 'WEEK' | 'MONTH' }) =>

@@ -27,7 +27,6 @@ import {
 import { Switch } from '@/components/ui/switch'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Textarea } from '@/components/ui/textarea'
-import { useAuthStore } from '@/stores/authStore'
 import { expenseApi } from './api/expense.api'
 import type { Expense, ExpenseRequest, ExpenseType } from './types/expense.types'
 
@@ -74,7 +73,6 @@ function getErrorMessage(error: unknown, fallback: string) {
 
 export default function ExpenseManagementPage() {
   const queryClient = useQueryClient()
-  const user = useAuthStore((state) => state.user)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null)
   const [formData, setFormData] = useState<ExpenseRequest>(defaultForm)

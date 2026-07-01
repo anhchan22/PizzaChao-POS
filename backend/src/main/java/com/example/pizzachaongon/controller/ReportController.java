@@ -27,8 +27,12 @@ public class ReportController {
     public ResponseEntity<DashboardResponse> getDashboard(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+            @RequestParam(required = false) Long shiftId
     ) {
+        if (shiftId != null) {
+            return ResponseEntity.ok(reportService.getDashboardByShift(shiftId));
+        }
         DateRange range = resolveRange(date, from, to);
         return ResponseEntity.ok(reportService.getDashboard(
                 range.from().atStartOfDay(),

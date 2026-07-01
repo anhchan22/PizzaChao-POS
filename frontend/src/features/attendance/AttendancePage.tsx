@@ -1,7 +1,7 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { ArrowRight, CalendarClock, Clock3, Loader2, Trophy, Users } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { Navigate, useNavigate } from 'react-router-dom'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -17,9 +17,11 @@ import {
   getDefaultDateRange,
   isRangeLongerThanOneMonth,
 } from './utils/attendance-format'
+import { useAuthStore } from '@/stores/authStore'
 
 export default function AttendancePage() {
   const navigate = useNavigate()
+  const user = useAuthStore((state) => state.user)
   const defaultRange = useMemo(() => getDefaultDateRange(), [])
   const [fromDate, setFromDate] = useState(defaultRange.fromDate)
   const [toDate, setToDate] = useState(defaultRange.toDate)
@@ -30,7 +32,7 @@ export default function AttendancePage() {
   const summaryQuery = useQuery({
     queryKey: ['attendance-summary', fromDate, toDate, status],
     queryFn: () => attendanceApi.getSummary({ fromDate, toDate, status }),
-    enabled: Boolean(fromDate && toDate && !rangeInvalid),
+    enabled: user?.role === 'OWNER' && Boolean(fromDate && toDate && !rangeInvalid),
   })
 
   const summary = summaryQuery.data?.data
@@ -39,6 +41,10 @@ export default function AttendancePage() {
   const openDetail = (userId: number) => {
     const params = new URLSearchParams({ fromDate, toDate, status })
     navigate(`/admin/attendance/${userId}?${params.toString()}`)
+  }
+
+  if (user?.role === 'STAFF') {
+    return <Navigate to={`/admin/attendance/${user.id}`} replace />
   }
 
   return (
@@ -136,25 +142,25 @@ export default function AttendancePage() {
               Chưa có ca làm phù hợp với bộ lọc.
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
+            <div className="overflow-x-auto rounded-xl border border-[#e5e7eb]">
+              <Table className="min-w-[860px] table-fixed">
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Nhân viên</TableHead>
-                    <TableHead>SĐT</TableHead>
-                    <TableHead className="text-right">Số ca</TableHead>
-                    <TableHead className="text-right">Tổng giờ</TableHead>
-                    <TableHead className="text-right">TB / ca</TableHead>
-                    <TableHead>Lần gần nhất</TableHead>
-                    <TableHead className="text-right">Chi tiết</TableHead>
+                    <TableHead className="w-[220px]">Nhân viên</TableHead>
+                    <TableHead className="w-[130px]">SĐT</TableHead>
+                    <TableHead className="w-[90px] text-center">Số ca</TableHead>
+                    <TableHead className="w-[120px] text-right">Tổng giờ</TableHead>
+                    <TableHead className="w-[110px] text-right">TB / ca</TableHead>
+                    <TableHead className="w-[150px]">Lần gần nhất</TableHead>
+                    <TableHead className="w-[90px] text-right">Chi tiết</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {employees.map((employee) => (
                     <TableRow key={employee.userId}>
-                      <TableCell className="font-medium">{employee.fullName}</TableCell>
-                      <TableCell>{employee.phone || '—'}</TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="truncate font-medium">{employee.fullName}</TableCell>
+                      <TableCell className="truncate">{employee.phone || '—'}</TableCell>
+                      <TableCell className="text-center">
                         <Badge variant="secondary">{employee.totalShifts}</Badge>
                       </TableCell>
                       <TableCell className="text-right font-semibold">

@@ -27,6 +27,7 @@ export default function OptionManagementPage() {
     mutationFn: optionApi.create,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["options"] })
+      queryClient.invalidateQueries({ queryKey: ["pos-options"] })
       toast.success("Tạo topping thành công")
       setIsOpen(false)
     },
@@ -37,6 +38,7 @@ export default function OptionManagementPage() {
     mutationFn: ({ id, data }: { id: number, data: OptionRequest }) => optionApi.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["options"] })
+      queryClient.invalidateQueries({ queryKey: ["pos-options"] })
       toast.success("Cập nhật thành công")
       setIsOpen(false)
     },
@@ -47,6 +49,7 @@ export default function OptionManagementPage() {
     mutationFn: optionApi.delete,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["options"] })
+      queryClient.invalidateQueries({ queryKey: ["pos-options"] })
       toast.success("Xóa topping thành công")
     },
     onError: () => toast.error("Không thể xóa topping này")

@@ -36,17 +36,46 @@ public class ReportService {
         return getDashboard(date.atStartOfDay(), date.plusDays(1).atStartOfDay());
     }
 
+    public DashboardResponse getDashboardByShift(Long shiftId) {
+        BigDecimal revenue = orderRepository.sumRevenueByShiftId(shiftId);
+        Long orderCount = orderRepository.countPaidByShiftId(shiftId);
+        BigDecimal expenses = expenseRepository.sumExpensesByShiftId(shiftId);
+        return buildDashboardResponse(
+                revenue,
+                orderCount,
+                orderRepository.revenueByPaymentMethodAndShiftId(shiftId),
+                expenses,
+                orderRepository.topProductsByShiftId(shiftId)
+        );
+    }
+
     public DashboardResponse getDashboard(LocalDateTime from, LocalDateTime to) {
         BigDecimal todayRevenue = orderRepository.sumRevenue(from, to);
         Long todayOrders = orderRepository.countCompleted(from, to);
-        
-        List<Object[]> pmtStats = orderRepository.revenueByPaymentMethod(from, to);
+        BigDecimal todayExpenses = expenseRepository.sumExpenses(from, to);
+
+        return buildDashboardResponse(
+                todayRevenue,
+                todayOrders,
+                orderRepository.revenueByPaymentMethod(from, to),
+                todayExpenses,
+                orderRepository.topProducts(from, to)
+        );
+    }
+
+    private DashboardResponse buildDashboardResponse(
+            BigDecimal revenue,
+            Long orderCount,
+            List<Object[]> paymentStats,
+            BigDecimal expenses,
+            List<Object[]> topProductsRaw
+    ) {
         BigDecimal cashRev = BigDecimal.ZERO;
         BigDecimal transRev = BigDecimal.ZERO;
         Long cashCount = 0L;
         Long transCount = 0L;
 
-        for (Object[] row : pmtStats) {
+        for (Object[] row : paymentStats) {
             PaymentMethod method = (PaymentMethod) row[0];
             BigDecimal rev = (BigDecimal) row[1];
             Long cnt = (Long) row[2];
@@ -59,10 +88,8 @@ public class ReportService {
             }
         }
 
-        BigDecimal todayExpenses = expenseRepository.sumExpenses(from, to);
-        BigDecimal profit = todayRevenue.subtract(todayExpenses);
+        BigDecimal profit = revenue.subtract(expenses);
 
-        List<Object[]> topProductsRaw = orderRepository.topProducts(from, to);
         List<TopProductResponse> topProducts = topProductsRaw.stream()
                 .limit(5)
                 .map(row -> TopProductResponse.builder()
@@ -84,13 +111,13 @@ public class ReportService {
                 .collect(Collectors.toList());
 
         return DashboardResponse.builder()
-                .todayRevenue(todayRevenue)
-                .todayOrders(todayOrders)
+                .todayRevenue(revenue)
+                .todayOrders(orderCount)
                 .cashRevenue(cashRev)
                 .transferRevenue(transRev)
                 .cashCount(cashCount)
                 .transferCount(transCount)
-                .todayExpenses(todayExpenses)
+                .todayExpenses(expenses)
                 .estimatedProfit(profit)
                 .topProducts(topProducts)
                 .lowStockItems(lowStockItems)

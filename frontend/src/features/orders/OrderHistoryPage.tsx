@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useEffect, useState, type ReactNode } from 'react'
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { format } from 'date-fns'
 import {
   Ban,
@@ -12,7 +12,6 @@ import {
   Loader2,
   MoreHorizontal,
   XCircle,
-  Calendar as CalendarIcon,
 } from 'lucide-react'
 import { useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -25,7 +24,6 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/utils'
@@ -231,6 +229,7 @@ export default function OrderHistoryPage() {
       page,
       size: 20,
     }),
+    placeholderData: keepPreviousData,
     refetchInterval: tab === 'UNFINISHED' ? 15_000 : false,
     refetchOnMount: 'always',
     refetchOnWindowFocus: true,
@@ -258,6 +257,8 @@ export default function OrderHistoryPage() {
       toast.success(variables.status === 'COMPLETED' ? 'Đã hoàn thành đơn' : 'Đã hủy đơn')
       queryClient.invalidateQueries({ queryKey: ['orders'] })
       queryClient.invalidateQueries({ queryKey: ['current-shift'] })
+      queryClient.invalidateQueries({ queryKey: ['report-dashboard'] })
+      queryClient.invalidateQueries({ queryKey: ['recent-orders'] })
       setCancelOrder(null)
       setCancelReason('')
     },
@@ -270,9 +271,10 @@ export default function OrderHistoryPage() {
   })
 
   const changeTab = (value: OrderQueueFilter) => {
+    if (value === tab) return
     setTab(value)
     setPage(0)
-    setSearchParams({ tab: value })
+    setSearchParams({ tab: value }, { replace: true })
   }
 
   const finishOrder = (order: OrderResponse) => {
@@ -293,11 +295,6 @@ export default function OrderHistoryPage() {
   }
 
   const orders = ordersQuery.data?.content ?? []
-  const totalInPage = useMemo(
-    () => orders.reduce((sum, order) => sum + Number(order.totalAmount), 0),
-    [orders],
-  )
-
   return (
     <div className="min-h-[calc(100vh-1rem)] rounded-2xl bg-[#d2f2e7] p-3 text-[#022c22] sm:p-4">
       <div className="space-y-3">
@@ -313,7 +310,7 @@ export default function OrderHistoryPage() {
 
               <div className="flex flex-col gap-4">
                 <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
-                  {tabs.map(({ value, label, description, icon: Icon }) => (
+                  {tabs.map(({ value, label, icon: Icon }) => (
                     <button
                       type="button"
                       key={value}
@@ -363,7 +360,8 @@ export default function OrderHistoryPage() {
           />
         ) : (
           <section className={cn(
-            "grid gap-3",
+            "grid gap-3 transition-opacity duration-150",
+            ordersQuery.isFetching && "opacity-70",
             tab === 'UNFINISHED' ? "sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" : "xl:grid-cols-2"
           )}>
             {orders.map((order) => (

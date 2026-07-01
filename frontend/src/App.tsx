@@ -63,11 +63,11 @@ function AppRoutes() {
         />
         <Route
           path="/admin/attendance"
-          element={<ProtectedRoute roles={['OWNER']}><AttendancePage /></ProtectedRoute>}
+          element={<ProtectedRoute roles={['OWNER', 'STAFF']}><AttendancePage /></ProtectedRoute>}
         />
         <Route
           path="/admin/attendance/:userId"
-          element={<ProtectedRoute roles={['OWNER']}><AttendanceDetailPage /></ProtectedRoute>}
+          element={<ProtectedRoute roles={['OWNER', 'STAFF']}><AttendanceDetailPage /></ProtectedRoute>}
         />
         <Route
           path="/admin/shifts"

@@ -10,9 +10,12 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { toast } from "sonner"
 import { PlusIcon, EditIcon, TrashIcon, Tags } from "lucide-react"
+import { useAuthStore } from "@/stores/authStore"
 
 export default function CategoryManagementPage() {
   const queryClient = useQueryClient()
+  const user = useAuthStore((state) => state.user)
+  const isOwner = user?.role === 'OWNER'
   const [isOpen, setIsOpen] = useState(false)
   const [editingItem, setEditingItem] = useState<ProductCategory | null>(null)
   const [formData, setFormData] = useState<CategoryRequest>({ name: "", description: "", sortOrder: 0, isActive: true })
@@ -26,6 +29,7 @@ export default function CategoryManagementPage() {
     mutationFn: categoryApi.create,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["categories"] })
+      queryClient.invalidateQueries({ queryKey: ["pos-products"] })
       toast.success("Tạo danh mục thành công")
       setIsOpen(false)
     },
@@ -36,6 +40,7 @@ export default function CategoryManagementPage() {
     mutationFn: ({ id, data }: { id: number, data: CategoryRequest }) => categoryApi.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["categories"] })
+      queryClient.invalidateQueries({ queryKey: ["pos-products"] })
       toast.success("Cập nhật thành công")
       setIsOpen(false)
     },
@@ -46,6 +51,7 @@ export default function CategoryManagementPage() {
     mutationFn: categoryApi.delete,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["categories"] })
+      queryClient.invalidateQueries({ queryKey: ["pos-products"] })
       toast.success("Xóa danh mục thành công")
     },
     onError: () => toast.error("Không thể xóa danh mục này")
@@ -79,14 +85,16 @@ export default function CategoryManagementPage() {
           <Tags className="h-7 w-7 text-[#007a55]" />
           Danh mục sản phẩm
         </h1>
-        <Button onClick={() => {
-          setEditingItem(null)
-          setFormData({ name: "", description: "", sortOrder: 0, isActive: true })
-          setIsOpen(true)
-        }}>
-          <PlusIcon className="mr-2 h-4 w-4" />
-          Thêm danh mục
-        </Button>
+        {isOwner && (
+          <Button onClick={() => {
+            setEditingItem(null)
+            setFormData({ name: "", description: "", sortOrder: 0, isActive: true })
+            setIsOpen(true)
+          }}>
+            <PlusIcon className="mr-2 h-4 w-4" />
+            Thêm danh mục
+          </Button>
+        )}
       </div>
 
       <div className="overflow-hidden rounded-md border">
@@ -98,14 +106,14 @@ export default function CategoryManagementPage() {
               <TableHead>Mô tả</TableHead>
               <TableHead>Thứ tự</TableHead>
               <TableHead>Trạng thái</TableHead>
-              <TableHead className="text-right">Thao tác</TableHead>
+              {isOwner && <TableHead className="text-right">Thao tác</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow><TableCell colSpan={6} className="text-center">Đang tải...</TableCell></TableRow>
+              <TableRow><TableCell colSpan={isOwner ? 6 : 5} className="text-center">Đang tải...</TableCell></TableRow>
             ) : categories.length === 0 ? (
-              <TableRow><TableCell colSpan={6} className="text-center">Chưa có danh mục nào</TableCell></TableRow>
+              <TableRow><TableCell colSpan={isOwner ? 6 : 5} className="text-center">Chưa có danh mục nào</TableCell></TableRow>
             ) : (
               categories.map((cat, idx) => (
                 <TableRow key={cat.id}>
@@ -114,21 +122,24 @@ export default function CategoryManagementPage() {
                   <TableCell>{cat.description}</TableCell>
                   <TableCell>{cat.sortOrder}</TableCell>
                   <TableCell>
-                    <Switch 
-                      checked={cat.isActive} 
+                    <Switch
+                      checked={cat.isActive}
+                      disabled={!isOwner}
                       onCheckedChange={(checked) => updateMutation.mutate({ id: cat.id, data: { ...cat, isActive: checked }})}
                     />
                   </TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="icon" onClick={() => openEdit(cat)}>
-                      <EditIcon className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" onClick={() => {
-                      if (confirm("Bạn có chắc muốn xóa?")) deleteMutation.mutate(cat.id)
-                    }}>
-                      <TrashIcon className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </TableCell>
+                  {isOwner && (
+                    <TableCell className="text-right">
+                      <Button variant="ghost" size="icon" onClick={() => openEdit(cat)}>
+                        <EditIcon className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => {
+                        if (confirm("Bạn có chắc muốn xóa?")) deleteMutation.mutate(cat.id)
+                      }}>
+                        <TrashIcon className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </TableCell>
+                  )}
                 </TableRow>
               ))
             )}

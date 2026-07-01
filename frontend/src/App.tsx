@@ -21,6 +21,7 @@ import ExpenseManagementPage from "@/features/expenses/ExpenseManagementPage";
 import InventoryManagementPage from "@/features/inventory/InventoryManagementPage";
 import AttendancePage from "@/features/attendance/AttendancePage";
 import AttendanceDetailPage from "@/features/attendance/AttendanceDetailPage";
+import AnalyticsPage from "@/features/analytics/AnalyticsPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -56,6 +57,10 @@ function AppRoutes() {
         <Route path="/admin/expenses" element={<ExpenseManagementPage />} />
         <Route path="/admin/inventory" element={<InventoryManagementPage />} />
         <Route path="/admin/settings" element={<SettingsPage />} />
+        <Route
+          path="/admin/analytics"
+          element={<ProtectedRoute roles={['OWNER']}><AnalyticsPage /></ProtectedRoute>}
+        />
         <Route
           path="/admin/attendance"
           element={<ProtectedRoute roles={['OWNER']}><AttendancePage /></ProtectedRoute>}

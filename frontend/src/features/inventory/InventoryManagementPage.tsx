@@ -369,9 +369,9 @@ export default function InventoryManagementPage() {
                   value={formData.currentQuantity}
                   onChange={(event) => setFormData((current) => ({ ...current, currentQuantity: Number(event.target.value) }))}
                 />
-                {editingItem && (
+                {/* {editingItem && (
                   <p className="text-xs text-muted-foreground">Muốn tăng tồn hãy dùng nút Nhập hàng ngoài bảng.</p>
-                )}
+                )} */}
               </div>
               <div className="space-y-2">
                 <Label>Ngưỡng cảnh báo sắp hết</Label>
@@ -388,7 +388,7 @@ export default function InventoryManagementPage() {
             <div className="flex items-center justify-between rounded-lg border p-3">
               <div>
                 <Label>Đang theo dõi</Label>
-                <p className="text-xs text-muted-foreground">Tắt nếu vật tư này không còn dùng.</p>
+                {/* <p className="text-xs text-muted-foreground">Tắt nếu vật tư này không còn dùng.</p> */}
               </div>
               <Switch
                 checked={formData.active}
@@ -410,7 +410,7 @@ export default function InventoryManagementPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <Label>Quy tắc trừ theo size</Label>
-                  <p className="text-xs text-muted-foreground">Chỉ dùng để hệ thống gợi ý tồn dự kiến khi đóng ca.</p>
+                  {/* <p className="text-xs text-muted-foreground">Chỉ dùng để hệ thống gợi ý tồn dự kiến khi đóng ca.</p> */}
                 </div>
                 <Button type="button" variant="outline" onClick={addRule}>Thêm rule</Button>
               </div>

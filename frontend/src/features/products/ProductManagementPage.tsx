@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { toast } from "sonner"
-import { PlusIcon, EditIcon, TrashIcon, UploadIcon } from "lucide-react"
+import { PlusIcon, EditIcon, TrashIcon, UploadIcon, Pizza } from "lucide-react"
 
 export default function ProductManagementPage() {
   const queryClient = useQueryClient()
@@ -137,7 +137,10 @@ export default function ProductManagementPage() {
     <div className="min-h-[calc(100vh-1.5rem)] rounded-2xl bg-[#d2f2e7] p-3 text-[#022c22] sm:p-4">
       <div className="space-y-6 rounded-2xl border border-[#e5e7eb] bg-white/90 p-4 shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-black leading-none tracking-[-0.04em] text-[#022c22] sm:text-3xl">Sản phẩm / Món ăn</h1>
+        <h1 className="flex items-center gap-2 text-2xl font-black leading-none tracking-[-0.04em] text-[#022c22] sm:text-3xl">
+          <Pizza className="h-7 w-7 text-[#007a55]" />
+          Sản phẩm / Món ăn
+        </h1>
         <Button onClick={openNew}>
           <PlusIcon className="mr-2 h-4 w-4" />
           Thêm Món Mới
@@ -152,15 +155,16 @@ export default function ProductManagementPage() {
               <TableHead>Tên món</TableHead>
               <TableHead>Danh mục</TableHead>
               <TableHead>Giá gốc</TableHead>
+              <TableHead>Đã bán</TableHead>
               <TableHead>Trạng thái</TableHead>
               <TableHead className="text-right">Thao tác</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow><TableCell colSpan={6} className="text-center">Đang tải...</TableCell></TableRow>
+              <TableRow><TableCell colSpan={7} className="text-center">Đang tải...</TableCell></TableRow>
             ) : products.length === 0 ? (
-              <TableRow><TableCell colSpan={6} className="text-center">Chưa có sản phẩm nào</TableCell></TableRow>
+              <TableRow><TableCell colSpan={7} className="text-center">Chưa có sản phẩm nào</TableCell></TableRow>
             ) : (
               products.map((prod) => (
                 <TableRow key={prod.id}>
@@ -174,6 +178,11 @@ export default function ProductManagementPage() {
                   <TableCell className="font-medium">{prod.name}</TableCell>
                   <TableCell>{prod.category.name}</TableCell>
                   <TableCell>{prod.basePrice.toLocaleString('vi-VN')} đ</TableCell>
+                  <TableCell>
+                    <Badge variant="secondary" className="font-semibold">
+                      {(prod.soldQuantity ?? 0).toLocaleString('vi-VN')}
+                    </Badge>
+                  </TableCell>
                   <TableCell>
                     <Badge variant={prod.status === 'ACTIVE' ? 'default' : prod.status === 'SOLD_OUT' ? 'destructive' : 'secondary'}>
                       {prod.status}

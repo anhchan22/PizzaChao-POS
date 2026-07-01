@@ -8,6 +8,7 @@ import {
   ChevronRight,
   Clock3,
   FileText,
+  ClipboardList,
   Loader2,
   MoreHorizontal,
   XCircle,
@@ -303,9 +304,12 @@ export default function OrderHistoryPage() {
         <section className="rounded-2xl border border-[#e5e7eb] bg-white/90 p-4 shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
           <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
             <div className="flex min-w-0 flex-1 flex-col gap-4">
-              <h1 className="text-2xl font-black leading-none tracking-[-0.04em] text-[#022c22] sm:text-3xl">
-                Đơn hàng
-              </h1>
+              <div>
+                <h1 className="flex items-center gap-2 text-2xl font-black leading-none tracking-[-0.04em] text-[#022c22] sm:text-3xl">
+                  <ClipboardList className="h-7 w-7 text-[#007a55]" />
+                  Đơn hàng
+                </h1>
+              </div>
 
               <div className="flex flex-col gap-4">
                 <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
@@ -480,7 +484,6 @@ export default function OrderHistoryPage() {
               onClick={() => setPage((current) => Math.max(0, current - 1))}
             >
               <ChevronLeft className="mr-1 h-3.5 w-3.5" />
-              Trang trước
             </Button>
             <span className="rounded-full border border-[#e5e7eb] bg-white px-3 py-1 text-xs font-semibold text-[#71717a]">
               Trang {page + 1}/{ordersQuery.data?.totalPages}
@@ -492,7 +495,6 @@ export default function OrderHistoryPage() {
               disabled={page + 1 >= (ordersQuery.data?.totalPages ?? 1)}
               onClick={() => setPage((current) => current + 1)}
             >
-              Trang sau
               <ChevronRight className="ml-1 h-3.5 w-3.5" />
             </Button>
           </div>

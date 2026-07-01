@@ -211,14 +211,14 @@ export function DashboardPage() {
   }
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] rounded-2xl bg-[#f5f5f5] p-3 text-[#022c22] sm:p-4">
+    <div className="min-h-[calc(100vh-1.5rem)] rounded-2xl bg-[#d2f2e7] p-3 text-[#022c22] sm:p-4">
       <div className="w-full space-y-4">
         <section className="grid w-full gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(360px,0.9fr)]">
           <Card className={cn(
-            'overflow-hidden border-[#e5e7eb] bg-white shadow-[0_1px_2px_rgba(0,0,0,0.05)]',
+            'overflow-hidden border-[#e5e7eb] bg-white shadow-[0_1px_2px_rgba(0,0,0,0.05)] pt-0',
             activeShift ? 'ring-1 ring-emerald-200' : 'ring-1 ring-amber-200',
           )}>
-            <CardHeader className="border-b border-[#e5e7eb] bg-gradient-to-br from-[#d2f2e7] to-white pb-4">
+            <CardHeader className="border-b border-[#e5e7eb] bg-gradient-to-br from-[#d2f2e7] to-white pt-5 pb-4">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <CardTitle className="flex items-center gap-2 text-2xl font-black tracking-[-0.04em] text-[#022c22]">
@@ -351,7 +351,6 @@ export function DashboardPage() {
                 <PackageSearch className="h-5 w-5 text-[#007a55]" />
                 Top món bán chạy hôm nay
               </CardTitle>
-              <CardDescription>Giúp bếp và thu ngân nắm món đang hot để chuẩn bị nguyên liệu.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-2">
               {dashboardQuery.isLoading ? (
@@ -385,7 +384,6 @@ export function DashboardPage() {
                 <Clock3 className="h-5 w-5 text-[#007a55]" />
                 Hoạt động gần đây
               </CardTitle>
-              <CardDescription>6 đơn mới nhất trong hôm nay, tự làm mới mỗi 15 giây.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-2">
               {recentOrdersQuery.isLoading ? (

@@ -104,6 +104,7 @@ export interface Product {
   imageUrl: string
   status: ProductStatus
   basePrice: number
+  soldQuantity: number
   variants: ProductVariant[]
   createdAt: string
   updatedAt: string

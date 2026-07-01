@@ -1,8 +1,24 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowRight, DollarSign, Loader2, ShoppingCart, Store, TrendingUp, Receipt, AlertTriangle, Download } from 'lucide-react'
+import {
+  AlertTriangle,
+  ArrowRight,
+  Banknote,
+  CheckCircle2,
+  Clock3,
+  CreditCard,
+  Loader2,
+  PackageSearch,
+  Receipt,
+  ShoppingCart,
+  Store,
+  TrendingUp,
+} from 'lucide-react'
+import { format } from 'date-fns'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
+import { orderApi, type OrderResponse, type OrderStatus } from '@/apis/order.api'
+import { reportApi } from '@/apis/report.api'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -11,14 +27,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { inventoryApi } from '@/features/inventory/api/inventory.api'
 import { shiftApi } from '@/features/shift/api/shift.api'
-import { reportApi } from '@/apis/report.api'
-import { addMonths, format, isAfter, isBefore, parseISO } from 'date-fns'
-
-import { StatCard } from './components/StatCard'
-import { RevenueChart } from './components/RevenueChart'
-import { TopProductsChart } from './components/TopProductsChart'
-import { HourlySalesChart } from './components/HourlySalesChart'
-import { exportToExcel } from '@/lib/excel'
+import { cn } from '@/lib/utils'
 
 const currency = new Intl.NumberFormat('vi-VN', {
   style: 'currency',
@@ -34,11 +43,37 @@ function getErrorMessage(error: unknown, fallback: string) {
   return fallback
 }
 
+function statusLabel(status: OrderStatus) {
+  switch (status) {
+    case 'PENDING':
+      return 'Chờ xử lý'
+    case 'PROCESSING':
+      return 'Đang chuẩn bị'
+    case 'COMPLETED':
+      return 'Đã xong'
+    case 'CANCELLED':
+      return 'Đã hủy'
+  }
+}
+
+function statusClass(status: OrderStatus) {
+  switch (status) {
+    case 'COMPLETED':
+      return 'bg-emerald-50 text-emerald-700 border-emerald-200'
+    case 'CANCELLED':
+      return 'bg-red-50 text-red-700 border-red-200'
+    case 'PROCESSING':
+      return 'bg-amber-50 text-amber-700 border-amber-200'
+    case 'PENDING':
+      return 'bg-slate-50 text-slate-600 border-slate-200'
+  }
+}
+
 export function DashboardPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const today = format(new Date(), 'yyyy-MM-dd')
 
-  // Shift Dialog state
   const [openDialog, setOpenDialog] = useState(false)
   const [closeDialog, setCloseDialog] = useState(false)
   const [startingCash, setStartingCash] = useState('')
@@ -48,47 +83,6 @@ export function DashboardPage() {
   const [inventoryCounts, setInventoryCounts] = useState<Record<number, string>>({})
   const [inventoryNotes, setInventoryNotes] = useState<Record<number, string>>({})
 
-  // Dashboard date range state
-  const today = format(new Date(), 'yyyy-MM-dd')
-  const [fromDate, setFromDate] = useState(today)
-  const [toDate, setToDate] = useState(today)
-
-  const dateRangeError = useMemo(() => {
-    if (!fromDate || !toDate) return 'Vui lòng chọn đủ ngày bắt đầu và ngày kết thúc.'
-    const from = parseISO(fromDate)
-    const to = parseISO(toDate)
-    if (isBefore(to, from)) return 'Ngày kết thúc không được trước ngày bắt đầu.'
-    if (isAfter(to, addMonths(from, 1))) return 'Khoảng thời gian báo cáo tối đa là 1 tháng.'
-    return ''
-  }, [fromDate, toDate])
-
-  const isDateRangeValid = !dateRangeError
-  const rangeTitle = !fromDate || !toDate
-    ? 'Tổng quan'
-    : fromDate === toDate
-      ? `Tổng quan ngày ${format(parseISO(fromDate), 'dd/MM/yyyy')}`
-      : `Tổng quan từ ${format(parseISO(fromDate), 'dd/MM/yyyy')} đến ${format(parseISO(toDate), 'dd/MM/yyyy')}`
-
-  const handleFromDateChange = (value: string) => {
-    setFromDate(value)
-    if (value && toDate && isBefore(parseISO(toDate), parseISO(value))) {
-      setToDate(value)
-    }
-  }
-
-  const handleToDateChange = (value: string) => {
-    setToDate(value)
-    if (!fromDate || !value) return
-    const from = parseISO(fromDate)
-    const to = parseISO(value)
-    if (isBefore(to, from)) {
-      toast.error('Ngày kết thúc không được trước ngày bắt đầu.')
-    } else if (isAfter(to, addMonths(from, 1))) {
-      toast.error('Khoảng thời gian báo cáo tối đa là 1 tháng.')
-    }
-  }
-
-  // Queries
   const currentShiftQuery = useQuery({
     queryKey: ['current-shift'],
     queryFn: shiftApi.getCurrentShift,
@@ -97,40 +91,52 @@ export function DashboardPage() {
     refetchOnWindowFocus: true,
   })
 
+  const dashboardQuery = useQuery({
+    queryKey: ['report-dashboard', today],
+    queryFn: () => reportApi.getDashboard({ date: today }),
+  })
+
+  const recentOrdersQuery = useQuery({
+    queryKey: ['recent-orders', today],
+    queryFn: () => orderApi.getAll({
+      status: 'ALL',
+      fromDate: today,
+      toDate: today,
+      page: 0,
+      size: 6,
+    }),
+    refetchInterval: 15_000,
+  })
+
   const inventoryQuery = useQuery({
     queryKey: ['inventory-items', 'close-shift'],
     queryFn: () => inventoryApi.getAll({ active: true }),
     enabled: closeDialog,
   })
 
-  // Report Queries
-  const dashboardQuery = useQuery({
-    queryKey: ['report-dashboard', fromDate, toDate],
-    queryFn: () => reportApi.getDashboard({ from: fromDate, to: toDate }),
-    enabled: isDateRangeValid,
-  })
-
-  const revenueQuery = useQuery({
-    queryKey: ['report-revenue', fromDate, toDate],
-    queryFn: () => reportApi.getRevenue({ from: fromDate, to: toDate, groupBy: 'DAY' }),
-    enabled: isDateRangeValid,
-  })
-
-  const hourlySalesQuery = useQuery({
-    queryKey: ['report-hourly', fromDate, toDate],
-    queryFn: () => reportApi.getHourlySales({ from: fromDate, to: toDate }),
-    enabled: isDateRangeValid,
-  })
-
-  // Computed for Shift
   const activeShift = currentShiftQuery.data?.data ?? null
+  const dashData = dashboardQuery.data
+  const recentOrders = recentOrdersQuery.data?.content ?? []
+  const lowStockItems = dashData?.lowStockItems ?? []
+  const topProducts = dashData?.topProducts ?? []
+
   const parsedStartingCash = Number(startingCash)
   const parsedActualCash = Number(actualCash)
   const cashDifference = activeShift && Number.isFinite(parsedActualCash)
     ? parsedActualCash - activeShift.expectedCash
     : 0
 
-  // Mutations for Shift
+  const activeShiftDuration = useMemo(() => {
+    if (!activeShift) return null
+    const opened = new Date(activeShift.openedAt).getTime()
+    const minutes = Math.max(0, Math.floor((Date.now() - opened) / 60_000))
+    const hours = Math.floor(minutes / 60)
+    const remainingMinutes = minutes % 60
+    if (hours === 0) return `${remainingMinutes} phút`
+    if (remainingMinutes === 0) return `${hours} giờ`
+    return `${hours} giờ ${remainingMinutes} phút`
+  }, [activeShift])
+
   const openShiftMutation = useMutation({
     mutationFn: shiftApi.openShift,
     onSuccess: async () => {
@@ -149,6 +155,7 @@ export function DashboardPage() {
       await queryClient.invalidateQueries({ queryKey: ['current-shift'] })
       await queryClient.invalidateQueries({ queryKey: ['shift-history'] })
       await queryClient.invalidateQueries({ queryKey: ['inventory-items'] })
+      await queryClient.invalidateQueries({ queryKey: ['report-dashboard'] })
       setCloseDialog(false)
       setActualCash('')
       setClosingNote('')
@@ -186,6 +193,7 @@ export function DashboardPage() {
       toast.error('Số lượng vật tư cuối ca không hợp lệ')
       return
     }
+
     closeShiftMutation.mutate({
       actualCash: parsedActualCash,
       closingNote: closingNote.trim() || undefined,
@@ -202,245 +210,203 @@ export function DashboardPage() {
     })
   }
 
-  const handleExportExcel = () => {
-    if (!dashData) {
-      toast.error('Chưa có dữ liệu để xuất')
-      return
-    }
-
-    // Prepare data for export
-    const exportData = [
-      { 'Chỉ tiêu': 'Doanh thu', 'Giá trị': dashData.todayRevenue },
-      { 'Chỉ tiêu': 'Số đơn hàng', 'Giá trị': dashData.todayOrders },
-      { 'Chỉ tiêu': 'Tiền mặt', 'Giá trị': dashData.cashRevenue },
-      { 'Chỉ tiêu': 'Chuyển khoản', 'Giá trị': dashData.transferRevenue },
-      { 'Chỉ tiêu': 'Chi phí', 'Giá trị': dashData.todayExpenses },
-      { 'Chỉ tiêu': 'Lợi nhuận ước tính', 'Giá trị': dashData.estimatedProfit },
-    ]
-
-    exportToExcel(exportData, `BaoCao_TongQuan_${fromDate}_${toDate}`)
-    toast.success('Đã xuất file Excel')
-  }
-
-  const dashData = dashboardQuery.data
-  const lowStockItems = dashData?.lowStockItems ?? []
-  const topProducts = dashData?.topProducts ?? []
-  const revenueData = revenueQuery.data ?? []
-  const hourlySalesData = hourlySalesQuery.data ?? []
-
   return (
-    <div className="min-h-[calc(100vh-1.5rem)] rounded-2xl bg-[#d2f2e7] p-3 text-[#022c22] sm:p-4">
-      <div className="space-y-6 pb-8 rounded-2xl border border-[#e5e7eb] bg-white/90 p-4 shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
-      {/* Shift Panel */}
-      <div className="grid gap-4">
-        <Card className="border-primary/20 bg-primary/5 shadow-sm">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Store className="h-5 w-5 text-primary" />
-              Ca làm việc của bạn
-            </CardTitle>
-            <CardDescription>
-              {activeShift ? 'Ca đang mở và sẵn sàng bán hàng' : 'Bạn chưa mở ca làm việc'}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {currentShiftQuery.isLoading ? (
-              <div className="flex items-center gap-2 py-4 text-sm text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Đang kiểm tra ca làm việc...
+    <div className="min-h-[calc(100vh-4rem)] rounded-2xl bg-[#f5f5f5] p-3 text-[#022c22] sm:p-4">
+      <div className="w-full space-y-4">
+        <section className="grid w-full gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(360px,0.9fr)]">
+          <Card className={cn(
+            'overflow-hidden border-[#e5e7eb] bg-white shadow-[0_1px_2px_rgba(0,0,0,0.05)]',
+            activeShift ? 'ring-1 ring-emerald-200' : 'ring-1 ring-amber-200',
+          )}>
+            <CardHeader className="border-b border-[#e5e7eb] bg-gradient-to-br from-[#d2f2e7] to-white pb-4">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <CardTitle className="flex items-center gap-2 text-2xl font-black tracking-[-0.04em] text-[#022c22]">
+                    <Store className="h-6 w-6 text-[#007a55]" />
+                    Ca làm việc hôm nay
+                  </CardTitle>
+                  <CardDescription className="mt-1 text-[#71717a]">
+                    {activeShift ? 'Ca đang mở, sẵn sàng bán hàng.' : 'Chưa có ca đang mở. Hãy mở ca trước khi bán hàng.'}
+                  </CardDescription>
+                </div>
+                <span className={cn(
+                  'rounded-full border px-3 py-1 text-xs font-bold',
+                  activeShift
+                    ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                    : 'border-amber-200 bg-amber-50 text-amber-700',
+                )}>
+                  {activeShift ? 'Đang mở ca' : 'Chưa mở ca'}
+                </span>
               </div>
-            ) : currentShiftQuery.isError ? (
-              <div className="space-y-3 py-2">
-                <p className="text-sm text-destructive">Không thể tải thông tin ca làm việc.</p>
-                <Button variant="outline" size="sm" onClick={() => currentShiftQuery.refetch()}>
-                  Thử lại
-                </Button>
-              </div>
-            ) : activeShift ? (
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between gap-4">
-                  <span className="text-muted-foreground">Người mở ca</span>
-                  <span className="font-medium">{activeShift.openedByName}</span>
+            </CardHeader>
+            <CardContent className="p-4">
+              {currentShiftQuery.isLoading ? (
+                <div className="flex items-center gap-2 py-4 text-sm text-[#71717a]">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Đang kiểm tra ca làm việc...
                 </div>
-                <div className="flex justify-between gap-4">
-                  <span className="text-muted-foreground">Thời gian mở</span>
-                  <span className="font-medium">{new Date(activeShift.openedAt).toLocaleString('vi-VN')}</span>
+              ) : currentShiftQuery.isError ? (
+                <div className="space-y-3 py-2">
+                  <p className="text-sm text-destructive">Không thể tải thông tin ca làm việc.</p>
+                  <Button variant="outline" size="sm" onClick={() => currentShiftQuery.refetch()}>
+                    Thử lại
+                  </Button>
                 </div>
-                <div className="flex justify-between gap-4">
-                  <span className="text-muted-foreground">Tiền đầu ca</span>
-                  <span className="font-medium">{currency.format(activeShift.startingCash)}</span>
+              ) : activeShift ? (
+                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                  <ShiftInfo label="Người mở ca" value={activeShift.openedByName} />
+                  <ShiftInfo label="Mở lúc" value={new Date(activeShift.openedAt).toLocaleString('vi-VN')} />
+                  <ShiftInfo label="Đã chạy" value={activeShiftDuration ?? '—'} />
+                  <ShiftInfo label="Tiền đầu ca" value={currency.format(activeShift.startingCash)} />
+                  <ShiftInfo label="Tiền mặt dự kiến" value={currency.format(activeShift.expectedCash)} highlight />
+                  <ShiftInfo label="Tiền mặt hôm nay" value={currency.format(dashData?.cashRevenue ?? 0)} />
+                  <ShiftInfo label="Chuyển khoản hôm nay" value={currency.format(dashData?.transferRevenue ?? 0)} />
+                  <ShiftInfo label="Số đơn hôm nay" value={String(dashData?.todayOrders ?? 0)} />
                 </div>
-                <div className="flex justify-between gap-4">
-                  <span className="text-muted-foreground">Tiền mặt dự kiến</span>
-                  <span className="font-semibold text-primary">{currency.format(activeShift.expectedCash)}</span>
+              ) : (
+                <div className="rounded-xl border border-dashed border-amber-300 bg-amber-50 p-4 text-sm text-amber-800">
+                  Mở ca và nhập tiền mặt đầu ca trước khi sử dụng máy POS. Nếu chưa mở ca, nhân viên sẽ không thể tạo đơn.
                 </div>
-                {activeShift.openingNote && (
-                  <p className="rounded-md bg-muted p-2 text-muted-foreground">{activeShift.openingNote}</p>
-                )}
-              </div>
-            ) : (
-              <p className="py-2 text-sm text-muted-foreground">
-                Mở ca và nhập tiền mặt đầu ca trước khi sử dụng máy POS.
-              </p>
-            )}
-          </CardContent>
-          <CardFooter className="pt-2">
-            {activeShift ? (
-              <div className="flex w-full gap-2">
-                <Button className="flex-1" onClick={() => navigate('/pos')}>
-                  Vào máy POS <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
+              )}
+              {activeShift?.openingNote && (
+                <p className="mt-3 rounded-xl border border-[#e5e7eb] bg-[#f5f5f5] p-3 text-sm text-[#71717a]">
+                  Ghi chú đầu ca: {activeShift.openingNote}
+                </p>
+              )}
+            </CardContent>
+            <CardFooter className="border-t border-[#e5e7eb] bg-white p-4">
+              {activeShift ? (
+                <div className="flex w-full flex-wrap gap-2">
+                  <Button className="rounded-full bg-[#00bc7d] px-5 text-white hover:bg-[#007a55]" onClick={() => navigate('/pos')}>
+                    Vào máy POS <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    className="rounded-full px-5"
+                    onClick={() => {
+                      setActualCash('')
+                      setClosingNote('')
+                      setInventoryCounts({})
+                      setInventoryNotes({})
+                      setCloseDialog(true)
+                    }}
+                  >
+                    Đóng ca
+                  </Button>
+                </div>
+              ) : (
                 <Button
-                  variant="destructive"
+                  className="rounded-full bg-[#00bc7d] px-5 text-white hover:bg-[#007a55]"
+                  disabled={currentShiftQuery.isLoading || currentShiftQuery.isError}
                   onClick={() => {
-                    setActualCash('')
-                    setClosingNote('')
-                    setInventoryCounts({})
-                    setInventoryNotes({})
-                    setCloseDialog(true)
+                    setStartingCash('')
+                    setOpeningNote('')
+                    setOpenDialog(true)
                   }}
                 >
-                  Đóng ca
+                  Mở ca bán hàng
                 </Button>
-              </div>
-            ) : (
-              <Button
-                className="w-full"
-                disabled={currentShiftQuery.isLoading || currentShiftQuery.isError}
-                onClick={() => {
-                  setStartingCash('')
-                  setOpeningNote('')
-                  setOpenDialog(true)
-                }}
-              >
-                Mở ca bán hàng
-              </Button>
-            )}
-          </CardFooter>
-        </Card>
-
-        {/* Low Stock Warning Panel - only visible if there are warnings */}
-        {lowStockItems.length > 0 && (
-          <Card className="border-amber-500/50 bg-amber-500/5 shadow-sm">
-             <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-lg text-amber-700 dark:text-amber-500">
-                <AlertTriangle className="h-5 w-5" />
-                Cảnh báo sắp hết vật tư ({lowStockItems.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-2 sm:grid-cols-2">
-                {lowStockItems.slice(0, 4).map(item => (
-                  <div key={item.id} className="flex justify-between items-center bg-background rounded p-2 text-sm">
-                    <span className="font-medium truncate mr-2">{item.name}</span>
-                    <span className="text-amber-600 font-bold whitespace-nowrap">
-                      {item.currentQuantity} / {item.warningQuantity} {item.unit}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-            <CardFooter className="pt-2 flex justify-end">
-               <Button variant="link" className="text-amber-700 dark:text-amber-500 p-0" onClick={() => navigate('/admin/inventory')}>
-                 Xem tất cả kho <ArrowRight className="ml-1 w-4 h-4" />
-               </Button>
+              )}
             </CardFooter>
           </Card>
-        )}
+
+          <AlertsCard
+            hasActiveShift={Boolean(activeShift)}
+            lowStockItems={lowStockItems}
+            onOpenInventory={() => navigate('/admin/inventory')}
+          />
+        </section>
+
+        <section className="grid w-full gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <OperationMetric
+            title="Tổng thu hôm nay"
+            value={dashboardQuery.isLoading ? '...' : currency.format(dashData?.todayRevenue ?? 0)}
+            icon={Banknote}
+            tone="emerald"
+          />
+          <OperationMetric
+            title="Đã chi"
+            value={dashboardQuery.isLoading ? '...' : currency.format(dashData?.todayExpenses ?? 0)}
+            icon={Receipt}
+            tone="rose"
+          />
+          <OperationMetric
+            title="Lợi nhuận ước tính"
+            value={dashboardQuery.isLoading ? '...' : currency.format(dashData?.estimatedProfit ?? 0)}
+            icon={TrendingUp}
+            tone="amber"
+          />
+          <OperationMetric
+            title="Số đơn hàng"
+            value={dashboardQuery.isLoading ? '...' : String(dashData?.todayOrders ?? 0)}
+            icon={ShoppingCart}
+            tone="blue"
+          />
+        </section>
+
+        <section className="grid w-full gap-4 xl:grid-cols-2">
+          <Card className="border-[#e5e7eb] bg-white shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-lg font-black tracking-[-0.03em] text-[#022c22]">
+                <PackageSearch className="h-5 w-5 text-[#007a55]" />
+                Top món bán chạy hôm nay
+              </CardTitle>
+              <CardDescription>Giúp bếp và thu ngân nắm món đang hot để chuẩn bị nguyên liệu.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {dashboardQuery.isLoading ? (
+                <LoadingLine text="Đang tải top món..." />
+              ) : topProducts.length === 0 ? (
+                <EmptyLine text="Hôm nay chưa có món nào được bán." />
+              ) : (
+                topProducts.slice(0, 6).map((product, index) => (
+                  <div key={`${product.productName}-${index}`} className="flex items-center justify-between rounded-xl border border-[#e5e7eb] bg-[#f5f5f5] px-3 py-2">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-white text-xs font-black text-[#007a55]">
+                        {index + 1}
+                      </span>
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-bold text-[#022c22]">{product.productName}</p>
+                        <p className="text-xs text-[#71717a]">{currency.format(product.revenue)}</p>
+                      </div>
+                    </div>
+                    <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-[#007a55]">
+                      {product.quantitySold} món
+                    </span>
+                  </div>
+                ))
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="border-[#e5e7eb] bg-white shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-lg font-black tracking-[-0.03em] text-[#022c22]">
+                <Clock3 className="h-5 w-5 text-[#007a55]" />
+                Hoạt động gần đây
+              </CardTitle>
+              <CardDescription>6 đơn mới nhất trong hôm nay, tự làm mới mỗi 15 giây.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {recentOrdersQuery.isLoading ? (
+                <LoadingLine text="Đang tải đơn gần đây..." />
+              ) : recentOrders.length === 0 ? (
+                <EmptyLine text="Hôm nay chưa có đơn hàng nào." />
+              ) : (
+                recentOrders.map((order) => (
+                  <RecentOrderRow key={order.id} order={order} />
+                ))
+              )}
+            </CardContent>
+            <CardFooter className="justify-end border-t border-[#e5e7eb] pt-3">
+              <Button variant="outline" className="rounded-full" size="sm" onClick={() => navigate('/admin/orders')}>
+                Xem hàng đợi đơn <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </CardFooter>
+          </Card>
+        </section>
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-3 mt-8 mb-4">
-        <div>
-          <h2 className="text-2xl font-black leading-none tracking-[-0.04em] text-[#022c22] sm:text-3xl">{rangeTitle}</h2>
-          {dateRangeError && <p className="mt-1 text-sm text-destructive">{dateRangeError}</p>}
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="flex items-center gap-2">
-            <Label htmlFor="reportFrom" className="text-xs text-muted-foreground">Từ</Label>
-            <Input
-              id="reportFrom"
-              type="date"
-              value={fromDate}
-              onChange={(e) => handleFromDateChange(e.target.value)}
-              className="h-9 w-auto"
-            />
-          </div>
-          <div className="flex items-center gap-2">
-            <Label htmlFor="reportTo" className="text-xs text-muted-foreground">Đến</Label>
-            <Input
-              id="reportTo"
-              type="date"
-              value={toDate}
-              onChange={(e) => handleToDateChange(e.target.value)}
-              className="h-9 w-auto"
-            />
-          </div>
-          <Button variant="outline" size="sm" onClick={handleExportExcel} disabled={!dashData}>
-            <Download className="w-4 h-4 mr-2" />
-            Xuất Excel
-          </Button>
-        </div>
-      </div>
-
-      {/* Stats row */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        <StatCard
-          title="Tiền mặt"
-          value={dashboardQuery.isLoading ? '...' : currency.format(dashData?.cashRevenue || 0)}
-          icon={DollarSign}
-          iconColorClass="text-emerald-600"
-          iconBgClass="bg-emerald-100"
-          trendValue={12}
-        />
-        <StatCard
-          title="Chuyển khoản"
-          value={dashboardQuery.isLoading ? '...' : currency.format(dashData?.transferRevenue || 0)}
-          icon={Receipt}
-          iconColorClass="text-blue-600"
-          iconBgClass="bg-blue-100"
-          trendValue={8}
-        />
-        <StatCard
-          title="Tổng đơn hàng"
-          value={dashboardQuery.isLoading ? '...' : String(dashData?.todayOrders || 0)}
-          icon={ShoppingCart}
-          iconColorClass="text-violet-600"
-          iconBgClass="bg-violet-100"
-          trendValue={5}
-        />
-        <StatCard
-          title="Đã chi"
-          value={dashboardQuery.isLoading ? '...' : currency.format(dashData?.todayExpenses || 0)}
-          icon={TrendingUp}
-          iconColorClass="text-rose-600"
-          iconBgClass="bg-rose-100"
-          trendValue={-2}
-        />
-        <StatCard
-          title="Lợi nhuận ước tính"
-          value={dashboardQuery.isLoading ? '...' : currency.format(dashData?.estimatedProfit || 0)}
-          icon={Store}
-          iconColorClass="text-amber-600"
-          iconBgClass="bg-amber-100"
-          trendValue={15}
-        />
-      </div>
-
-      {/* Charts row */}
-      <div className="grid gap-4 lg:grid-cols-3 mt-4">
-        <div className="lg:col-span-2">
-          <RevenueChart data={revenueData} isLoading={revenueQuery.isLoading} />
-        </div>
-        <div className="lg:col-span-1">
-          <TopProductsChart data={topProducts} />
-        </div>
-      </div>
-
-      <div className="grid gap-4 mt-4">
-        <HourlySalesChart data={hourlySalesData} />
-      </div>
-
-      {/* Shift Dialogs (unchanged) */}
       <Dialog open={openDialog} onOpenChange={setOpenDialog}>
         <DialogContent className="sm:max-w-[440px]">
           <DialogHeader><DialogTitle>Mở ca làm việc</DialogTitle></DialogHeader>
@@ -545,10 +511,7 @@ export function DashboardPage() {
                       <div className="min-w-0">
                         <p className="truncate text-sm font-semibold">{item.name}</p>
                         <p className="mt-1 text-xs text-muted-foreground">
-                          dự kiến:{" "}
-                          <span>
-                            {item.estimatedRemaining}
-                          </span>
+                          dự kiến: <span>{item.estimatedRemaining}</span>
                         </p>
                       </div>
 
@@ -556,7 +519,7 @@ export function DashboardPage() {
                         type="number"
                         min="0"
                         step="1"
-                        value={inventoryCounts[item.id] ?? ""}
+                        value={inventoryCounts[item.id] ?? ''}
                         onChange={(event) =>
                           setInventoryCounts((current) => ({
                             ...current,
@@ -572,13 +535,13 @@ export function DashboardPage() {
                           className={
                             inventoryCounts[item.id] &&
                             Number(inventoryCounts[item.id]) - item.estimatedRemaining !== 0
-                              ? "font-semibold text-amber-600"
-                              : "font-semibold text-emerald-600"
+                              ? 'font-semibold text-amber-600'
+                              : 'font-semibold text-emerald-600'
                           }
                         >
                           {inventoryCounts[item.id]
                             ? Number(inventoryCounts[item.id]) - item.estimatedRemaining
-                            : "—"}
+                            : '—'}
                         </p>
                       </div>
                     </div>
@@ -596,7 +559,147 @@ export function DashboardPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </div>
+  )
+}
+
+function ShiftInfo({ label, value, highlight = false }: { label: string; value: string; highlight?: boolean }) {
+  return (
+    <div className="rounded-xl border border-[#e5e7eb] bg-[#f5f5f5] p-3">
+      <p className="text-xs text-[#71717a]">{label}</p>
+      <p className={cn('mt-1 truncate text-sm font-black', highlight ? 'text-[#007a55]' : 'text-[#022c22]')}>
+        {value}
+      </p>
+    </div>
+  )
+}
+
+function OperationMetric({
+  title,
+  value,
+  icon: Icon,
+  tone,
+}: {
+  title: string
+  value: string
+  icon: typeof Banknote
+  tone: 'emerald' | 'rose' | 'amber' | 'blue'
+}) {
+  const toneClasses = {
+    emerald: 'bg-emerald-50 text-emerald-700',
+    rose: 'bg-rose-50 text-rose-700',
+    amber: 'bg-amber-50 text-amber-700',
+    blue: 'bg-blue-50 text-blue-700',
+  }[tone]
+
+  return (
+    <Card className="border-[#e5e7eb] bg-white shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
+      <CardContent className="flex items-center justify-between gap-3 p-4">
+        <div>
+          <p className="text-xs font-medium uppercase tracking-[0.12em] text-[#71717a]">{title}</p>
+          <p className="mt-1 text-xl font-black tracking-[-0.03em] text-[#022c22]">{value}</p>
+        </div>
+        <div className={cn('grid h-10 w-10 shrink-0 place-items-center rounded-full', toneClasses)}>
+          <Icon className="h-5 w-5" />
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+function AlertsCard({
+  hasActiveShift,
+  lowStockItems,
+  onOpenInventory,
+}: {
+  hasActiveShift: boolean
+  lowStockItems: Array<{ id: number; name: string; unit: string; currentQuantity: number; warningQuantity: number }>
+  onOpenInventory: () => void
+}) {
+  const hasAlerts = !hasActiveShift || lowStockItems.length > 0
+
+  return (
+    <Card className="border-[#e5e7eb] bg-white shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-lg font-black tracking-[-0.03em] text-[#022c22]">
+          <AlertTriangle className={cn('h-5 w-5', hasAlerts ? 'text-amber-600' : 'text-emerald-600')} />
+          Cảnh báo vận hành
+        </CardTitle>
+        <CardDescription>Các việc cần chú ý trong ca hôm nay.</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        {!hasActiveShift && (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+            Chưa mở ca bán hàng.
+          </div>
+        )}
+        {lowStockItems.slice(0, 4).map((item) => (
+          <div key={item.id} className="flex items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm">
+            <span className="truncate font-semibold text-amber-900">{item.name}</span>
+            <span className="shrink-0 text-xs font-bold text-amber-700">
+              {item.currentQuantity}/{item.warningQuantity} {item.unit}
+            </span>
+          </div>
+        ))}
+        {!hasAlerts && (
+          <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">
+            <CheckCircle2 className="mr-2 inline h-4 w-4" />
+            Không có cảnh báo quan trọng.
+          </div>
+        )}
+      </CardContent>
+      {lowStockItems.length > 0 && (
+        <CardFooter className="justify-end border-t border-[#e5e7eb] pt-3">
+          <Button variant="outline" size="sm" className="rounded-full" onClick={onOpenInventory}>
+            Xem kho vật tư <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
+        </CardFooter>
+      )}
+    </Card>
+  )
+}
+
+function RecentOrderRow({ order }: { order: OrderResponse }) {
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-xl border border-[#e5e7eb] bg-[#f5f5f5] px-3 py-2">
+      <div className="min-w-0">
+        <div className="flex items-center gap-2">
+          <span className="font-black text-[#022c22]">#{order.queueNumber}</span>
+          <span className={cn('rounded-full border px-2 py-0.5 text-[11px] font-bold', statusClass(order.status))}>
+            {statusLabel(order.status)}
+          </span>
+        </div>
+        <p className="mt-0.5 truncate text-xs text-[#71717a]">
+          {order.customerName || 'Khách lẻ'} · {format(new Date(order.createdAt), 'HH:mm')}
+        </p>
       </div>
+      <div className="shrink-0 text-right">
+        <p className="text-sm font-black text-[#007a55]">{currency.format(order.totalAmount)}</p>
+        <p className="text-[11px] text-[#71717a]">
+          {order.paymentMethod === 'CASH' ? (
+            <span className="inline-flex items-center gap-1"><Banknote className="h-3 w-3" />Tiền mặt</span>
+          ) : (
+            <span className="inline-flex items-center gap-1"><CreditCard className="h-3 w-3" />CK</span>
+          )}
+        </p>
+      </div>
+    </div>
+  )
+}
+
+function LoadingLine({ text }: { text: string }) {
+  return (
+    <div className="flex items-center gap-2 rounded-xl border border-dashed border-[#e5e7eb] p-4 text-sm text-[#71717a]">
+      <Loader2 className="h-4 w-4 animate-spin" />
+      {text}
+    </div>
+  )
+}
+
+function EmptyLine({ text }: { text: string }) {
+  return (
+    <div className="rounded-xl border border-dashed border-[#e5e7eb] p-4 text-sm text-[#71717a]">
+      {text}
     </div>
   )
 }

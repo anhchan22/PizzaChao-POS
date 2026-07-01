@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { CalendarDays, ChevronLeft, ChevronRight, Eye, Loader2, History } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Eye, Loader2, History } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import {
   Dialog,
   DialogContent,
@@ -174,7 +174,7 @@ export function ShiftHistoryPage() {
               </div>
 
               <div className="mt-4 flex items-center justify-between">
-                <p className="text-sm text-muted-foreground">Tổng cộng {result.totalElements} ca</p>
+                <p className="text-sm text-muted-foreground">Tổng cộng {result.totalElements} ca · 20 ca/trang</p>
                 <div className="flex items-center gap-2">
                   <Button
                     variant="outline"

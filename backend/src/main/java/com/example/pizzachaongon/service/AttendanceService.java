@@ -6,12 +6,14 @@ import com.example.pizzachaongon.dto.response.EmployeeAttendanceDetailResponse;
 import com.example.pizzachaongon.entity.Shift;
 import com.example.pizzachaongon.entity.User;
 import com.example.pizzachaongon.enums.ShiftStatus;
+import com.example.pizzachaongon.enums.UserRole;
 import com.example.pizzachaongon.exception.BadRequestException;
 import com.example.pizzachaongon.exception.ResourceNotFoundException;
 import com.example.pizzachaongon.repository.OrderRepository;
 import com.example.pizzachaongon.repository.ShiftRepository;
 import com.example.pizzachaongon.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -32,6 +34,7 @@ public class AttendanceService {
     private final ShiftRepository shiftRepository;
     private final UserRepository userRepository;
     private final OrderRepository orderRepository;
+    private final UserService userService;
 
     @Transactional(readOnly = true)
     public AttendanceSummaryResponse getSummary(LocalDate fromDate, LocalDate toDate, Long userId, ShiftStatus status) {
@@ -77,6 +80,11 @@ public class AttendanceService {
 
     @Transactional(readOnly = true)
     public EmployeeAttendanceDetailResponse getEmployeeDetail(Long userId, LocalDate fromDate, LocalDate toDate, ShiftStatus status) {
+        User currentUser = userService.getCurrentUser();
+        if (currentUser.getRole() != UserRole.OWNER && !currentUser.getId().equals(userId)) {
+            throw new AccessDeniedException("Nhân viên chỉ được xem bảng chấm công của bản thân.");
+        }
+
         DateRange range = validateAndNormalizeRange(fromDate, toDate);
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy nhân viên với id: " + userId));

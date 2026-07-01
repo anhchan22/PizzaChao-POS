@@ -1,11 +1,11 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { AlertTriangle, Boxes, EditIcon, History, Loader2, PackagePlus, PlusIcon, Search, TrashIcon } from 'lucide-react'
+import { AlertTriangle, Boxes, EditIcon, Loader2, PackagePlus, PlusIcon, Search, TrashIcon } from 'lucide-react'
 import { toast } from 'sonner'
 import { sizeApi } from '@/apis/product.api'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -85,7 +85,6 @@ export default function InventoryManagementPage() {
 
   const items = inventoryQuery.data?.data ?? []
   const sizes = sizesQuery.data ?? []
-  const lowStockItems = useMemo(() => items.filter((item) => item.lowStock), [items])
 
   const saveMutation = useMutation({
     mutationFn: (payload: InventoryItemRequest) => editingItem
@@ -153,11 +152,6 @@ export default function InventoryManagementPage() {
     setStockInQuantity('')
     setStockInNote('')
     setStockInDialogOpen(true)
-  }
-
-  const openHistory = (item: InventoryItem) => {
-    setSelectedItem(item)
-    setHistoryDialogOpen(true)
   }
 
   const updateRule = (index: number, patch: Partial<InventoryUsageRuleRequest>) => {
@@ -333,7 +327,12 @@ export default function InventoryManagementPage() {
         </Table>
       </div>
 
-      <Dialog open={itemDialogOpen} onOpenChange={setItemDialogOpen}>
+      <Dialog
+        open={itemDialogOpen}
+        onOpenChange={(open) => {
+          if (open) setItemDialogOpen(true)
+        }}
+      >
         <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-[640px]">
           <DialogHeader><DialogTitle>{editingItem ? 'Sửa vật tư' : 'Thêm vật tư'}</DialogTitle></DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">

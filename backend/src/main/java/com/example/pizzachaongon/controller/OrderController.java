@@ -37,11 +37,12 @@ public class OrderController {
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String fromDate,
             @RequestParam(required = false) String toDate,
+            @RequestParam(required = false) Long shiftId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size
     ) {
         PageRequest pageRequest = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
-        return ResponseEntity.ok(orderService.getAllOrders(keyword, status, fromDate, toDate, pageRequest));
+        return ResponseEntity.ok(orderService.getAllOrders(keyword, status, fromDate, toDate, shiftId, pageRequest));
     }
 
     @GetMapping("/{id}")

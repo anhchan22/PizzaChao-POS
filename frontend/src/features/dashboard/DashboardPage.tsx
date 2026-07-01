@@ -72,7 +72,6 @@ function statusClass(status: OrderStatus) {
 export function DashboardPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const today = format(new Date(), 'yyyy-MM-dd')
 
   const [openDialog, setOpenDialog] = useState(false)
   const [closeDialog, setCloseDialog] = useState(false)
@@ -91,20 +90,23 @@ export function DashboardPage() {
     refetchOnWindowFocus: true,
   })
 
+  const activeShift = currentShiftQuery.data?.data ?? null
+
   const dashboardQuery = useQuery({
-    queryKey: ['report-dashboard', today],
-    queryFn: () => reportApi.getDashboard({ date: today }),
+    queryKey: ['report-dashboard', activeShift?.id],
+    queryFn: () => reportApi.getDashboard({ shiftId: activeShift!.id }),
+    enabled: Boolean(activeShift),
   })
 
   const recentOrdersQuery = useQuery({
-    queryKey: ['recent-orders', today],
+    queryKey: ['recent-orders', activeShift?.id],
     queryFn: () => orderApi.getAll({
       status: 'ALL',
-      fromDate: today,
-      toDate: today,
+      shiftId: activeShift!.id,
       page: 0,
       size: 6,
     }),
+    enabled: Boolean(activeShift),
     refetchInterval: 15_000,
   })
 
@@ -114,7 +116,6 @@ export function DashboardPage() {
     enabled: closeDialog,
   })
 
-  const activeShift = currentShiftQuery.data?.data ?? null
   const dashData = dashboardQuery.data
   const recentOrders = recentOrdersQuery.data?.content ?? []
   const lowStockItems = dashData?.lowStockItems ?? []
@@ -141,6 +142,8 @@ export function DashboardPage() {
     mutationFn: shiftApi.openShift,
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['current-shift'] })
+      await queryClient.invalidateQueries({ queryKey: ['report-dashboard'] })
+      await queryClient.invalidateQueries({ queryKey: ['recent-orders'] })
       setOpenDialog(false)
       setStartingCash('')
       setOpeningNote('')
@@ -210,6 +213,15 @@ export function DashboardPage() {
     })
   }
 
+  const fillExpectedInventoryCounts = () => {
+    const items = inventoryQuery.data?.data ?? []
+    const nextCounts = items.reduce<Record<number, string>>((acc, item) => {
+      acc[item.id] = String(item.estimatedRemaining)
+      return acc
+    }, {})
+    setInventoryCounts(nextCounts)
+  }
+
   return (
     <div className="min-h-[calc(100vh-1.5rem)] rounded-2xl bg-[#d2f2e7] p-3 text-[#022c22] sm:p-4">
       <div className="w-full space-y-4">
@@ -259,9 +271,9 @@ export function DashboardPage() {
                   <ShiftInfo label="Đã chạy" value={activeShiftDuration ?? '—'} />
                   <ShiftInfo label="Tiền đầu ca" value={currency.format(activeShift.startingCash)} />
                   <ShiftInfo label="Tiền mặt dự kiến" value={currency.format(activeShift.expectedCash)} highlight />
-                  <ShiftInfo label="Tiền mặt hôm nay" value={currency.format(dashData?.cashRevenue ?? 0)} />
-                  <ShiftInfo label="Chuyển khoản hôm nay" value={currency.format(dashData?.transferRevenue ?? 0)} />
-                  <ShiftInfo label="Số đơn hôm nay" value={String(dashData?.todayOrders ?? 0)} />
+                  <ShiftInfo label="Tiền mặt trong ca" value={currency.format(dashData?.cashRevenue ?? 0)} />
+                  <ShiftInfo label="Chuyển khoản trong ca" value={currency.format(dashData?.transferRevenue ?? 0)} />
+                  <ShiftInfo label="Số đơn trong ca" value={String(dashData?.todayOrders ?? 0)} />
                 </div>
               ) : (
                 <div className="rounded-xl border border-dashed border-amber-300 bg-amber-50 p-4 text-sm text-amber-800">
@@ -319,7 +331,7 @@ export function DashboardPage() {
 
         <section className="grid w-full gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <OperationMetric
-            title="Tổng thu hôm nay"
+            title="Tổng thu trong ca"
             value={dashboardQuery.isLoading ? '...' : currency.format(dashData?.todayRevenue ?? 0)}
             icon={Banknote}
             tone="emerald"
@@ -349,14 +361,14 @@ export function DashboardPage() {
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-lg font-black tracking-[-0.03em] text-[#022c22]">
                 <PackageSearch className="h-5 w-5 text-[#007a55]" />
-                Top món bán chạy hôm nay
+                Top món bán chạy trong ca
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
               {dashboardQuery.isLoading ? (
                 <LoadingLine text="Đang tải top món..." />
               ) : topProducts.length === 0 ? (
-                <EmptyLine text="Hôm nay chưa có món nào được bán." />
+                <EmptyLine text="Ca này chưa có món nào được bán." />
               ) : (
                 topProducts.slice(0, 6).map((product, index) => (
                   <div key={`${product.productName}-${index}`} className="flex items-center justify-between rounded-xl border border-[#e5e7eb] bg-[#f5f5f5] px-3 py-2">
@@ -389,7 +401,7 @@ export function DashboardPage() {
               {recentOrdersQuery.isLoading ? (
                 <LoadingLine text="Đang tải đơn gần đây..." />
               ) : recentOrders.length === 0 ? (
-                <EmptyLine text="Hôm nay chưa có đơn hàng nào." />
+                <EmptyLine text="Ca này chưa có đơn hàng nào." />
               ) : (
                 recentOrders.map((order) => (
                   <RecentOrderRow key={order.id} order={order} />
@@ -487,8 +499,22 @@ export function DashboardPage() {
               />
             </div>
             <div className="space-y-3 rounded-lg border p-3">
-              <div>
-                <Label>Kiểm kê vật tư cuối ca</Label>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <Label>Kiểm kê vật tư cuối ca</Label>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Có thể điền nhanh theo số dự kiến rồi chỉnh lại dòng nào cần.
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={inventoryQuery.isLoading || (inventoryQuery.data?.data ?? []).length === 0}
+                  onClick={fillExpectedInventoryCounts}
+                >
+                  Điền theo dự kiến
+                </Button>
               </div>
               {inventoryQuery.isLoading ? (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">

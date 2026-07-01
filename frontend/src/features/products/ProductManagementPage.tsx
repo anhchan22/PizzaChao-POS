@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { productApi, categoryApi, sizeApi, uploadApi } from "@/apis/product.api"
 import type { Product, ProductRequest, VariantRequest, ProductStatus } from "@/types"
@@ -11,10 +11,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { toast } from "sonner"
-import { PlusIcon, EditIcon, TrashIcon, UploadIcon, Pizza } from "lucide-react"
+import { ArrowDown, ArrowUp, ArrowUpDown, EditIcon, Pizza, PlusIcon, TrashIcon, UploadIcon } from "lucide-react"
+import { useAuthStore } from "@/stores/authStore"
+
+type SoldQuantitySort = 'none' | 'desc' | 'asc'
 
 export default function ProductManagementPage() {
   const queryClient = useQueryClient()
+  const user = useAuthStore((state) => state.user)
+  const isOwner = user?.role === 'OWNER'
   const [isOpen, setIsOpen] = useState(false)
   const [editingItem, setEditingItem] = useState<Product | null>(null)
   
@@ -27,15 +32,37 @@ export default function ProductManagementPage() {
   const [status, setStatus] = useState<ProductStatus>('ACTIVE')
   const [variants, setVariants] = useState<VariantRequest[]>([])
   const [enabledSizeIds, setEnabledSizeIds] = useState<number[]>([])
+  const [soldQuantitySort, setSoldQuantitySort] = useState<SoldQuantitySort>('none')
 
   const { data: products = [], isLoading } = useQuery({ queryKey: ["products"], queryFn: productApi.getAll })
   const { data: categories = [] } = useQuery({ queryKey: ["categories"], queryFn: categoryApi.getAll })
   const { data: sizes = [] } = useQuery({ queryKey: ["sizes"], queryFn: sizeApi.getAll })
 
+  const sortedProducts = useMemo(() => {
+    if (soldQuantitySort === 'none') {
+      return products
+    }
+
+    return [...products].sort((a, b) => {
+      const first = a.soldQuantity ?? 0
+      const second = b.soldQuantity ?? 0
+      return soldQuantitySort === 'desc' ? second - first : first - second
+    })
+  }, [products, soldQuantitySort])
+
+  const toggleSoldQuantitySort = () => {
+    setSoldQuantitySort((current) => {
+      if (current === 'none') return 'desc'
+      if (current === 'desc') return 'asc'
+      return 'none'
+    })
+  }
+
   const createMutation = useMutation({
     mutationFn: productApi.create,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["products"] })
+      queryClient.invalidateQueries({ queryKey: ["pos-products"] })
       toast.success("Tạo món thành công")
       setIsOpen(false)
     },
@@ -46,6 +73,7 @@ export default function ProductManagementPage() {
     mutationFn: ({ id, data }: { id: number, data: ProductRequest }) => productApi.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["products"] })
+      queryClient.invalidateQueries({ queryKey: ["pos-products"] })
       toast.success("Cập nhật món thành công")
       setIsOpen(false)
     },
@@ -56,6 +84,7 @@ export default function ProductManagementPage() {
     mutationFn: productApi.delete,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["products"] })
+      queryClient.invalidateQueries({ queryKey: ["pos-products"] })
       toast.success("Xóa món thành công")
     },
     onError: () => toast.error("Không thể xóa món này")
@@ -141,10 +170,12 @@ export default function ProductManagementPage() {
           <Pizza className="h-7 w-7 text-[#007a55]" />
           Sản phẩm / Món ăn
         </h1>
-        <Button onClick={openNew}>
-          <PlusIcon className="mr-2 h-4 w-4" />
-          Thêm Món Mới
-        </Button>
+        {isOwner && (
+          <Button onClick={openNew}>
+            <PlusIcon className="mr-2 h-4 w-4" />
+            Thêm Món Mới
+          </Button>
+        )}
       </div>
 
       <div className="overflow-hidden rounded-md border">
@@ -155,18 +186,33 @@ export default function ProductManagementPage() {
               <TableHead>Tên món</TableHead>
               <TableHead>Danh mục</TableHead>
               <TableHead>Giá gốc</TableHead>
-              <TableHead>Đã bán</TableHead>
+              <TableHead>
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-1 border-0 bg-transparent p-0 font-inherit text-inherit outline-none hover:text-inherit focus-visible:outline-none"
+                  onClick={toggleSoldQuantitySort}
+                >
+                  ĐÃ BÁN
+                  {soldQuantitySort === 'desc' ? (
+                    <ArrowDown className="h-3.5 w-3.5" />
+                  ) : soldQuantitySort === 'asc' ? (
+                    <ArrowUp className="h-3.5 w-3.5" />
+                  ) : (
+                    <ArrowUpDown className="h-3.5 w-3.5 opacity-50" />
+                  )}
+                </button>
+              </TableHead>
               <TableHead>Trạng thái</TableHead>
-              <TableHead className="text-right">Thao tác</TableHead>
+              {isOwner && <TableHead className="text-right">Thao tác</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow><TableCell colSpan={7} className="text-center">Đang tải...</TableCell></TableRow>
-            ) : products.length === 0 ? (
-              <TableRow><TableCell colSpan={7} className="text-center">Chưa có sản phẩm nào</TableCell></TableRow>
+              <TableRow><TableCell colSpan={isOwner ? 7 : 6} className="text-center">Đang tải...</TableCell></TableRow>
+            ) : sortedProducts.length === 0 ? (
+              <TableRow><TableCell colSpan={isOwner ? 7 : 6} className="text-center">Chưa có sản phẩm nào</TableCell></TableRow>
             ) : (
-              products.map((prod) => (
+              sortedProducts.map((prod) => (
                 <TableRow key={prod.id}>
                   <TableCell>
                     {prod.imageUrl ? (
@@ -188,16 +234,18 @@ export default function ProductManagementPage() {
                       {prod.status}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="icon" onClick={() => openEdit(prod)}>
-                      <EditIcon className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" onClick={() => {
-                      if (confirm("Bạn có chắc muốn xóa?")) deleteMutation.mutate(prod.id)
-                    }}>
-                      <TrashIcon className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </TableCell>
+                  {isOwner && (
+                    <TableCell className="text-right">
+                      <Button variant="ghost" size="icon" onClick={() => openEdit(prod)}>
+                        <EditIcon className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => {
+                        if (confirm("Bạn có chắc muốn xóa?")) deleteMutation.mutate(prod.id)
+                      }}>
+                        <TrashIcon className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </TableCell>
+                  )}
                 </TableRow>
               ))
             )}

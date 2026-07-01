@@ -33,12 +33,14 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
               )
               AND (cast(:fromDate as timestamp) IS NULL OR o.createdAt >= :fromDate)
               AND (cast(:toDate as timestamp) IS NULL OR o.createdAt <= :toDate)
+              AND (:shiftId IS NULL OR o.shift.id = :shiftId)
             """)
     Page<Order> findByStatusesAndKeyword(
             @Param("statuses") Collection<OrderStatus> statuses,
             @Param("keyword") String keyword,
             @Param("fromDate") LocalDateTime fromDate,
             @Param("toDate") LocalDateTime toDate,
+            @Param("shiftId") Long shiftId,
             Pageable pageable
     );
 
@@ -50,11 +52,13 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
                OR COALESCE(o.customerPhone, '') LIKE CONCAT('%', :keyword, '%'))
               AND (cast(:fromDate as timestamp) IS NULL OR o.createdAt >= :fromDate)
               AND (cast(:toDate as timestamp) IS NULL OR o.createdAt <= :toDate)
+              AND (:shiftId IS NULL OR o.shift.id = :shiftId)
             """)
     Page<Order> findAllByKeyword(
             @Param("keyword") String keyword, 
             @Param("fromDate") LocalDateTime fromDate,
             @Param("toDate") LocalDateTime toDate,
+            @Param("shiftId") Long shiftId,
             Pageable pageable);
     
     // Tìm kiếm theo tên khách, sđt hoặc mã đơn
@@ -98,4 +102,16 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     // Report: doanh thu theo ca
     @Query("SELECT o.shift.id, COALESCE(SUM(o.totalAmount), 0), COUNT(o) FROM Order o WHERE o.status = 'COMPLETED' AND o.createdAt >= :from AND o.createdAt < :to GROUP BY o.shift.id")
     List<Object[]> revenueByShift(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
+
+    @Query("SELECT COALESCE(SUM(o.totalAmount), 0) FROM Order o WHERE o.shift.id = :shiftId AND o.status <> 'CANCELLED'")
+    BigDecimal sumRevenueByShiftId(@Param("shiftId") Long shiftId);
+
+    @Query("SELECT COUNT(o) FROM Order o WHERE o.shift.id = :shiftId AND o.status <> 'CANCELLED'")
+    Long countPaidByShiftId(@Param("shiftId") Long shiftId);
+
+    @Query("SELECT o.paymentMethod, COALESCE(SUM(o.totalAmount), 0), COUNT(o) FROM Order o WHERE o.shift.id = :shiftId AND o.status <> 'CANCELLED' GROUP BY o.paymentMethod")
+    List<Object[]> revenueByPaymentMethodAndShiftId(@Param("shiftId") Long shiftId);
+
+    @Query("SELECT oi.productName, SUM(oi.quantity), COALESCE(SUM(oi.totalPrice), 0) FROM OrderItem oi JOIN oi.order o WHERE o.shift.id = :shiftId AND o.status <> 'CANCELLED' GROUP BY oi.productName ORDER BY SUM(oi.quantity) DESC")
+    List<Object[]> topProductsByShiftId(@Param("shiftId") Long shiftId);
 }

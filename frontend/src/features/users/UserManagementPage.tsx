@@ -21,7 +21,7 @@ import type {
   UserRole,
   UserStatus,
 } from '@/types'
-
+import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -384,177 +384,176 @@ export function UserManagementPage() {
   }
 
   return (
-    <div className="min-h-[calc(100vh-1.5rem)] rounded-2xl bg-[#d2f2e7] p-3 text-[#022c22] sm:p-4">
-      <div className="space-y-6 rounded-2xl border border-[#e5e7eb] bg-white/90 p-4 shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
-      {/* Page header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="flex items-center gap-2 text-2xl font-black leading-none tracking-[-0.04em] text-[#022c22] sm:text-3xl">
-            <UsersIcon className="h-6 w-6 text-primary" />
-            Quản lý nhân viên
+    <div className="min-h-[calc(100vh-1.5rem)] rounded-2xl bg-[#d2f2e7] p-1 text-[#022c22] sm:p-4">
+      <div className="space-y-1 sm:space-y-4 rounded-xl border border-[#e5e7eb] bg-white p-1 sm:p-6 shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
+        {/* Page header */}
+        <div className="flex items-center justify-between gap-1 sm:gap-3">
+          <h1 className="flex items-center gap-0.5 sm:gap-2 text-[10px] sm:text-3xl font-black leading-none tracking-[-0.04em] text-[#022c22]">
+            <UsersIcon className="h-3.5 w-3.5 sm:h-7 sm:w-7 text-[#007a55]" />
+            <span className="sm:hidden">Nhân viên</span>
+            <span className="hidden sm:inline">Quản lý nhân viên</span>
           </h1>
+          <Button
+            size="sm"
+            className="h-5 px-1.5 rounded text-[8px] sm:h-9 sm:px-4 sm:rounded-full sm:text-sm bg-[#00bc7d] text-white hover:bg-[#007a55]"
+            onClick={handleOpenCreate}
+          >
+            <Plus className="mr-0.5 h-2 w-2 sm:mr-1 sm:h-4 sm:w-4" />
+            Thêm nhân viên
+          </Button>
         </div>
-        <Button onClick={handleOpenCreate} className="gap-2">
-          <Plus className="h-4 w-4" />
-          Thêm nhân viên
-        </Button>
-      </div>
 
-      {/* Filters */}
-      <Card className="border-border/50">
-        <CardContent className="pt-6">
-          <div className="flex flex-wrap items-center gap-3">
-            {/* Search */}
-            <div className="relative flex-1 min-w-[200px] max-w-[320px]">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Tìm theo tên, username..."
-                value={searchKeyword}
-                onChange={(e) => setSearchKeyword(e.target.value)}
-                className="pl-9"
-              />
-            </div>
-
-            {/* Role filter */}
-            <Select value={filterRole} onValueChange={setFilterRole}>
-              <SelectTrigger className="w-[160px]">
-                <SelectValue placeholder="Tất cả vai trò" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">Tất cả vai trò</SelectItem>
-                <SelectItem value="OWNER">Chủ cửa hàng</SelectItem>
-                <SelectItem value="STAFF">Nhân viên</SelectItem>
-              </SelectContent>
-            </Select>
-
-            {/* Status filter */}
-            <Select value={filterStatus} onValueChange={setFilterStatus}>
-              <SelectTrigger className="w-[160px]">
-                <SelectValue placeholder="Tất cả trạng thái" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">Tất cả trạng thái</SelectItem>
-                <SelectItem value="ACTIVE">Đang hoạt động</SelectItem>
-                <SelectItem value="INACTIVE">Đã khóa</SelectItem>
-              </SelectContent>
-            </Select>
+        {/* Filters */}
+        <div className="flex items-center gap-1 sm:gap-3 w-full">
+          {/* Search */}
+          <div className="relative flex-1 min-w-0">
+            <Search className="absolute left-1.5 sm:left-3 top-1/2 -translate-y-1/2 h-2.5 w-2.5 sm:h-4 sm:w-4 text-muted-foreground" />
+            <Input
+              placeholder="Tìm theo tên, username..."
+              value={searchKeyword}
+              onChange={(e) => setSearchKeyword(e.target.value)}
+              className="pl-5 sm:pl-9 h-6 sm:h-9 text-[8px] sm:text-sm rounded border-[#e5e7eb] placeholder:text-[8px] sm:placeholder:text-sm"
+            />
           </div>
-        </CardContent>
-      </Card>
 
-      {/* Table */}
-      <Card className="border-border/50">
-        <CardContent className="p-0">
+          {/* Role filter */}
+          <Select value={filterRole} onValueChange={setFilterRole}>
+            <SelectTrigger className="w-[72px] sm:w-[160px] h-6 sm:h-9 text-[8px] sm:text-sm px-1 sm:px-3 rounded border-[#e5e7eb] shrink-0">
+              <SelectValue placeholder="Vai trò" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL" className="text-[10px] sm:text-sm">Tất cả vai trò</SelectItem>
+              <SelectItem value="OWNER" className="text-[10px] sm:text-sm">Chủ cửa hàng</SelectItem>
+              <SelectItem value="STAFF" className="text-[10px] sm:text-sm">Nhân viên</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {/* Status filter */}
+          <Select value={filterStatus} onValueChange={setFilterStatus}>
+            <SelectTrigger className="w-[72px] sm:w-[160px] h-6 sm:h-9 text-[8px] sm:text-sm px-1 sm:px-3 rounded border-[#e5e7eb] shrink-0">
+              <SelectValue placeholder="Trạng thái" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL" className="text-[10px] sm:text-sm">Tất cả trạng thái</SelectItem>
+              <SelectItem value="ACTIVE" className="text-[10px] sm:text-sm">Đang hoạt động</SelectItem>
+              <SelectItem value="INACTIVE" className="text-[10px] sm:text-sm">Đã khóa</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Table */}
+        <div className="overflow-x-auto rounded-lg sm:rounded-xl border border-[#e5e7eb]">
           <Table>
             <TableHeader>
-              <TableRow className="hover:bg-transparent">
-                <TableHead className="w-[60px]">#</TableHead>
-                <TableHead>Họ tên</TableHead>
-                <TableHead>Tên đăng nhập</TableHead>
-                <TableHead>Điện thoại</TableHead>
-                <TableHead>Vai trò</TableHead>
-                <TableHead>Trạng thái</TableHead>
-                <TableHead>Ngày tạo</TableHead>
-                <TableHead className="w-[60px]"></TableHead>
+              <TableRow className="hover:bg-transparent bg-[#022c22] border-b border-[#022c22]">
+                <TableHead className="w-6 sm:w-10 px-1 sm:px-3 py-0.5 sm:py-2 font-bold text-white text-[8px] sm:text-xs">#</TableHead>
+                <TableHead className="px-1 sm:px-3 py-0.5 sm:py-2 font-bold text-white text-[8px] sm:text-xs">Họ tên</TableHead>
+                <TableHead className="px-1 sm:px-3 py-0.5 sm:py-2 font-bold text-white text-[8px] sm:text-xs">Tên đăng nhập</TableHead>
+                <TableHead className="px-1 sm:px-3 py-0.5 sm:py-2 font-bold text-white text-[8px] sm:text-xs">Điện thoại</TableHead>
+                <TableHead className="px-1 sm:px-3 py-0.5 sm:py-2 font-bold text-white text-[8px] sm:text-xs">Vai trò</TableHead>
+                <TableHead className="px-1 sm:px-3 py-0.5 sm:py-2 font-bold text-white text-[8px] sm:text-xs">Trạng thái</TableHead>
+                <TableHead className="px-1 sm:px-3 py-0.5 sm:py-2 font-bold text-white text-[8px] sm:text-xs">Ngày tạo</TableHead>
+                <TableHead className="w-8 sm:w-12 px-1 sm:px-3 py-0.5 sm:py-2 text-right font-bold text-white text-[8px] sm:text-xs"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="h-32 text-center">
-                    <div className="flex items-center justify-center gap-2">
-                      <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                      <span className="text-muted-foreground">Đang tải...</span>
+                  <TableCell colSpan={8} className="h-20 text-center py-2">
+                    <div className="flex items-center justify-center gap-1 sm:gap-2">
+                      <Loader2 className="h-3.5 w-3.5 sm:h-5 sm:w-5 animate-spin text-muted-foreground" />
+                      <span className="text-[9px] sm:text-sm text-[#71717a]">Đang tải...</span>
                     </div>
                   </TableCell>
                 </TableRow>
               ) : !users?.length ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="h-32 text-center text-muted-foreground">
+                  <TableCell colSpan={8} className="h-20 text-center py-2 text-[9px] sm:text-sm text-[#71717a]">
                     Không có nhân viên nào
                   </TableCell>
                 </TableRow>
               ) : (
                 users.map((u, i) => (
                   <TableRow key={u.id} className="group">
-                    <TableCell className="text-muted-foreground font-mono text-xs">
+                    <TableCell className="px-1 sm:px-3 py-0.5 sm:py-2 text-muted-foreground font-mono text-[8px] sm:text-sm">
                       {i + 1}
                     </TableCell>
-                    <TableCell>
-                      <div className="font-medium">{u.fullName}</div>
+                    <TableCell className="px-1 sm:px-3 py-0.5 sm:py-2">
+                      <div className="font-bold text-[#022c22] text-[8px] sm:text-sm">{u.fullName}</div>
                     </TableCell>
-                    <TableCell>
-                      <code className="text-xs bg-muted px-1.5 py-0.5 rounded">
+                    <TableCell className="px-1 sm:px-3 py-0.5 sm:py-2">
+                      <code className="text-[7px] sm:text-xs bg-muted px-1 sm:px-1.5 py-0.5 rounded">
                         {u.username}
                       </code>
                     </TableCell>
-                    <TableCell className="text-muted-foreground">
+                    <TableCell className="px-1 sm:px-3 py-0.5 sm:py-2 text-[8px] sm:text-sm text-[#71717a]">
                       {u.phone || '—'}
                     </TableCell>
-                    <TableCell>
-                      <Badge variant={u.role === 'OWNER' ? 'default' : 'secondary'}>
+                    <TableCell className="px-1 sm:px-3 py-0.5 sm:py-2">
+                      <Badge variant={u.role === 'OWNER' ? 'default' : 'secondary'} className="px-1 sm:px-2 py-0 sm:py-0.5 text-[7px] sm:text-xs scale-[0.85] sm:scale-100 origin-left whitespace-nowrap">
                         {u.role === 'OWNER' ? 'Chủ cửa hàng' : 'Nhân viên'}
                       </Badge>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="px-1 sm:px-3 py-0.5 sm:py-2">
                       <Badge
                         variant={u.status === 'ACTIVE' ? 'default' : 'destructive'}
-                        className={
+                        className={cn(
+                          'px-1 sm:px-2 py-0 sm:py-0.5 text-[7px] sm:text-xs scale-[0.85] sm:scale-100 origin-left whitespace-nowrap',
                           u.status === 'ACTIVE'
-                            ? 'bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 border-emerald-500/20'
+                            ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20 hover:bg-emerald-500/10'
                             : ''
-                        }
+                        )}
                       >
                         <span
-                          className={`mr-1.5 inline-block h-1.5 w-1.5 rounded-full ${
+                          className={`mr-0.5 sm:mr-1 inline-block h-1 w-1 sm:h-1.5 sm:w-1.5 rounded-full ${
                             u.status === 'ACTIVE' ? 'bg-emerald-500' : 'bg-destructive'
                           }`}
                         />
                         {u.status === 'ACTIVE' ? 'Hoạt động' : 'Đã khóa'}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-xs text-muted-foreground">
+                    <TableCell className="px-1 sm:px-3 py-0.5 sm:py-2 text-[8px] sm:text-sm text-[#71717a] whitespace-nowrap">
                       {formatDate(u.createdAt)}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="px-1 sm:px-3 py-0.5 sm:py-2 text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                            className="h-5 w-5 sm:h-8 sm:w-8 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity"
                           >
-                            <MoreHorizontal className="h-4 w-4" />
+                            <MoreHorizontal className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-[#022c22]" />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-48">
+                        <DropdownMenuContent align="end" className="w-40 sm:w-48 text-xs sm:text-sm">
                           <DropdownMenuItem
-                            className="gap-2 cursor-pointer"
+                            className="gap-2 cursor-pointer text-xs"
                             onClick={() => handleOpenEdit(u)}
                           >
-                            <Pencil className="h-4 w-4" />
+                            <Pencil className="h-3 w-3" />
                             Chỉnh sửa
                           </DropdownMenuItem>
                           <DropdownMenuItem
-                            className="gap-2 cursor-pointer"
+                            className="gap-2 cursor-pointer text-xs"
                             onClick={() => handleResetPassword(u)}
                           >
-                            <KeyRound className="h-4 w-4" />
+                            <KeyRound className="h-3 w-3" />
                             Reset mật khẩu
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
-                            className="gap-2 cursor-pointer"
+                            className="gap-2 cursor-pointer text-xs"
                             onClick={() => handleToggleStatus(u)}
                           >
                             {u.status === 'ACTIVE' ? (
                               <>
-                                <ShieldOff className="h-4 w-4 text-destructive" />
+                                <ShieldOff className="h-3 w-3 text-destructive" />
                                 <span className="text-destructive">Khóa tài khoản</span>
                               </>
                             ) : (
                               <>
-                                <ShieldCheck className="h-4 w-4 text-emerald-500" />
+                                <ShieldCheck className="h-3 w-3 text-emerald-500" />
                                 <span className="text-emerald-500">Kích hoạt</span>
                               </>
                             )}
@@ -567,8 +566,7 @@ export function UserManagementPage() {
               )}
             </TableBody>
           </Table>
-        </CardContent>
-      </Card>
+        </div>
 
       {/* Dialogs */}
       <UserFormDialog open={formOpen} onOpenChange={setFormOpen} user={editingUser} />

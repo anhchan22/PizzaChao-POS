@@ -179,150 +179,167 @@ export default function ExpenseManagementPage() {
   }
 
   return (
-    <div className="min-h-[calc(100vh-1.5rem)] rounded-2xl bg-[#d2f2e7] p-3 text-[#022c22] sm:p-4">
-      <div className="space-y-6 rounded-2xl border border-[#e5e7eb] bg-white/90 p-4 shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="flex items-center gap-2 text-2xl font-black leading-none tracking-[-0.04em] text-[#022c22] sm:text-3xl">
-            <ReceiptText className="h-7 w-7 text-primary" />
+    <div className="min-h-[calc(100vh-1.5rem)] rounded-2xl bg-[#d2f2e7] p-1.5 text-[#022c22] sm:p-4">
+      <div className="space-y-1.5 sm:space-y-4 rounded-xl border border-[#e5e7eb] bg-white p-1.5 sm:p-6 shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
+        <div className="flex items-center justify-between gap-2">
+          <h1 className="flex items-center gap-1 text-xs font-black leading-none tracking-[-0.04em] text-[#022c22] sm:text-3xl">
+            <ReceiptText className="h-4 w-4 sm:h-7 sm:w-7 text-[#007a55]" />
             Quản lý chi phí
           </h1>
+          <Button
+            size="sm"
+            className="h-5 px-2 rounded text-[9px] bg-[#00bc7d] text-white hover:bg-[#007a55] sm:h-9 sm:px-4 sm:rounded-full sm:text-sm"
+            onClick={openCreate}
+          >
+            <PlusIcon className="mr-0.5 h-2.5 w-2.5 sm:mr-1 sm:h-3.5 sm:w-3.5" />
+            Thêm chi phí
+          </Button>
         </div>
-        <Button onClick={openCreate}>
-          <PlusIcon className="mr-2 h-4 w-4" />
-          Thêm chi phí
-        </Button>
-      </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-muted-foreground">Tổng Chi hiện tại</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-black text-primary">{currency.format(totalInPage)}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-muted-foreground">Số khoản chi</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-black">{pageData?.totalElements ?? 0}</p>
-          </CardContent>
-        </Card>
-      </div>
+        <div className="grid gap-1.5 sm:gap-3 grid-cols-2">
+          <Card className="border-[#e5e7eb] bg-white shadow-sm rounded-lg py-1 sm:py-3 px-1.5 sm:px-3 flex flex-col gap-0.5 sm:gap-1.5">
+            <CardHeader className="p-0">
+              <CardTitle className="text-[8px] font-medium text-muted-foreground sm:text-xs">Tổng Chi hiện tại</CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <p className="text-[10px] font-black text-[#007a55] sm:text-lg leading-tight">{currency.format(totalInPage)}</p>
+            </CardContent>
+          </Card>
+          <Card className="border-[#e5e7eb] bg-white shadow-sm rounded-lg py-1 sm:py-3 px-1.5 sm:px-3 flex flex-col gap-0.5 sm:gap-1.5">
+            <CardHeader className="p-0">
+              <CardTitle className="text-[8px] font-medium text-muted-foreground sm:text-xs">Số khoản chi</CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <p className="text-[10px] font-black text-[#022c22] sm:text-lg leading-tight">{pageData?.totalElements ?? 0}</p>
+            </CardContent>
+          </Card>
+        </div>
 
-      <Card>
-        <CardContent className="space-y-4 p-4">
-          <div className="grid gap-3 lg:grid-cols-[1.5fr_1fr_1fr_1fr_1fr]">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                value={keyword}
-                onChange={(event) => {
-                  setKeyword(event.target.value)
+        <Card className="border-[#e5e7eb] bg-white shadow-sm rounded-lg py-1 sm:py-3 px-1.5 sm:px-3">
+          <CardContent className="space-y-1.5 sm:space-y-4 p-1.5 sm:p-4">
+            <div className="grid gap-1.5 sm:gap-3 grid-cols-1 lg:grid-cols-[1.5fr_1fr_1fr_1fr_1fr]">
+              <div className="relative">
+                <Search className="absolute left-2.5 top-1/2 h-3 w-3 sm:h-4 sm:w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={keyword}
+                  onChange={(event) => {
+                    setKeyword(event.target.value)
+                    setPage(0)
+                  }}
+                  className="pl-7 h-7 sm:h-9 text-xs sm:text-sm"
+                  placeholder="Tìm tên khoản chi..."
+                />
+              </div>
+
+              {/* Loại & Phạm vi ca cùng 1 dòng trên mobile */}
+              <div className="grid grid-cols-2 gap-1.5 lg:contents">
+                <Select value={typeFilter} onValueChange={(value) => {
+                  setTypeFilter(value as ExpenseType | 'ALL')
                   setPage(0)
-                }}
-                className="pl-9"
-                placeholder="Tìm tên khoản chi hoặc ghi chú..."
-              />
-            </div>
-            <Select value={typeFilter} onValueChange={(value) => {
-              setTypeFilter(value as ExpenseType | 'ALL')
-              setPage(0)
-            }}>
-              <SelectTrigger className="w-full"><SelectValue placeholder="Loại chi phí" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">Tất cả loại</SelectItem>
-                {expenseTypes.map((item) => (
-                  <SelectItem key={item.value} value={item.value}>{item.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={shiftFilter} onValueChange={(value) => {
-              setShiftFilter(value as 'ALL' | 'SHIFT' | 'OUTSIDE')
-              setPage(0)
-            }}>
-              <SelectTrigger className="w-full"><SelectValue placeholder="Phạm vi ca" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">Tất cả</SelectItem>
-                <SelectItem value="SHIFT">Trong ca</SelectItem>
-                <SelectItem value="OUTSIDE">Ngoài ca</SelectItem>
-              </SelectContent>
-            </Select>
-            <Input type="date" value={fromDate} onChange={(e) => { setFromDate(e.target.value); setPage(0) }} />
-            <Input type="date" value={toDate} onChange={(e) => { setToDate(e.target.value); setPage(0) }} />
-          </div>
-        </CardContent>
-      </Card>
+                }}>
+                  <SelectTrigger className="w-full h-7 sm:h-9 text-xs sm:text-sm px-2 sm:px-3"><SelectValue placeholder="Loại chi phí" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ALL" className="text-xs">Tất cả loại</SelectItem>
+                    {expenseTypes.map((item) => (
+                      <SelectItem key={item.value} value={item.value} className="text-xs">{item.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={shiftFilter} onValueChange={(value) => {
+                  setShiftFilter(value as 'ALL' | 'SHIFT' | 'OUTSIDE')
+                  setPage(0)
+                }}>
+                  <SelectTrigger className="w-full h-7 sm:h-9 text-xs sm:text-sm px-2 sm:px-3"><SelectValue placeholder="Phạm vi ca" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ALL" className="text-xs">Tất cả</SelectItem>
+                    <SelectItem value="SHIFT" className="text-xs">Trong ca</SelectItem>
+                    <SelectItem value="OUTSIDE" className="text-xs">Ngoài ca</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-      <div className="overflow-hidden rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Khoản chi</TableHead>
-              <TableHead>Loại</TableHead>
-              <TableHead>Ngày</TableHead>
-              <TableHead>Người ghi</TableHead>
-              <TableHead>Ca</TableHead>
-              <TableHead className="text-right">Số tiền</TableHead>
-              <TableHead className="text-right">Thao tác</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {expensesQuery.isLoading ? (
-              <TableRow><TableCell colSpan={7} className="text-center">Đang tải...</TableCell></TableRow>
-            ) : expenses.length === 0 ? (
-              <TableRow><TableCell colSpan={7} className="text-center">Chưa có khoản chi nào</TableCell></TableRow>
-            ) : (
-              expenses.map((expense) => (
-                <TableRow key={expense.id}>
-                  <TableCell>
-                    <div className="font-semibold">{expense.title}</div>
-                    {expense.note && <div className="text-xs text-muted-foreground">{expense.note}</div>}
-                    {expense.receiptImageUrl && (
-                      <a
-                        href={expense.receiptImageUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="mt-1 inline-flex items-center gap-1 text-xs text-primary hover:underline"
+              {/* 2 lịch chọn ngày cùng 1 dòng trên mobile */}
+              <div className="grid grid-cols-2 gap-1.5 lg:contents">
+                <Input type="date" className="h-7 sm:h-9 text-xs sm:text-sm px-2 sm:px-3" value={fromDate} onChange={(e) => { setFromDate(e.target.value); setPage(0) }} />
+                <Input type="date" className="h-7 sm:h-9 text-xs sm:text-sm px-2 sm:px-3" value={toDate} onChange={(e) => { setToDate(e.target.value); setPage(0) }} />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="overflow-x-auto rounded-xl border border-[#e5e7eb]">
+          <Table>
+            <TableHeader>
+              <TableRow className="hover:bg-transparent bg-[#022c22] border-b border-[#022c22]">
+                <TableHead className="px-1 py-1 sm:px-3 sm:py-2 font-bold text-white text-[9px] sm:text-xs">Khoản chi</TableHead>
+                <TableHead className="w-24 px-1 py-1 sm:px-3 sm:py-2 font-bold text-white text-[9px] sm:text-xs">Loại</TableHead>
+                <TableHead className="w-28 px-1 py-1 sm:px-3 sm:py-2 font-bold text-white text-[9px] sm:text-xs">Ngày</TableHead>
+                <TableHead className="w-20 px-1 py-1 sm:px-3 sm:py-2 font-bold text-white text-[9px] sm:text-xs">Người ghi</TableHead>
+                <TableHead className="w-20 px-1 py-1 sm:px-3 sm:py-2 font-bold text-white text-[9px] sm:text-xs">Ca</TableHead>
+                <TableHead className="w-20 px-1 py-1 sm:px-3 sm:py-2 text-right font-bold text-white text-[9px] sm:text-xs">Số tiền</TableHead>
+                <TableHead className="w-16 px-1 py-1 sm:px-3 sm:py-2 text-right font-bold text-white text-[9px] sm:text-xs">Thao tác</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {expensesQuery.isLoading ? (
+                <TableRow><TableCell colSpan={7} className="text-center py-2 text-[9px] sm:text-sm">Đang tải...</TableCell></TableRow>
+              ) : expenses.length === 0 ? (
+                <TableRow><TableCell colSpan={7} className="text-center py-2 text-[9px] sm:text-sm">Chưa có khoản chi nào</TableCell></TableRow>
+              ) : (
+                expenses.map((expense) => (
+                  <TableRow key={expense.id}>
+                    <TableCell className="px-1 py-0.5 sm:px-3 sm:py-2">
+                      <div className="font-bold text-[#022c22] text-[9px] sm:text-sm">{expense.title}</div>
+                      {expense.note && <div className="text-[8px] sm:text-xs text-[#71717a] truncate max-w-[120px] sm:max-w-none">{expense.note}</div>}
+                      {expense.receiptImageUrl && (
+                        <a
+                          href={expense.receiptImageUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="mt-0.5 inline-flex items-center gap-0.5 text-[8px] sm:text-xs text-emerald-600 hover:underline"
+                        >
+                          <ImageIcon className="h-2 w-2 sm:h-3 sm:w-3" />
+                          Hóa đơn
+                        </a>
+                      )}
+                    </TableCell>
+                    <TableCell className="px-1 py-0.5 sm:px-3 sm:py-2">
+                      <Badge variant="secondary" className="px-1 py-0 sm:px-2 sm:py-0.5 text-[8px] sm:text-xs scale-[0.8] sm:scale-100 origin-left whitespace-nowrap">{typeLabel(expense.type)}</Badge>
+                    </TableCell>
+                    <TableCell className="px-1 py-0.5 sm:px-3 sm:py-2 text-[9px] sm:text-sm text-[#71717a]">{new Date(expense.incurredAt).toLocaleString('vi-VN')}</TableCell>
+                    <TableCell className="px-1 py-0.5 sm:px-3 sm:py-2 text-[9px] sm:text-sm text-[#71717a]">{expense.createdByName}</TableCell>
+                    <TableCell className="px-1 py-0.5 sm:px-3 sm:py-2">
+                      {expense.shiftId ? (
+                        <Badge className="px-1 py-0 sm:px-2 sm:py-0.5 text-[8px] sm:text-xs scale-[0.8] sm:scale-100 origin-left bg-emerald-50 text-emerald-700 whitespace-nowrap">Ca #{expense.shiftId}</Badge>
+                      ) : (
+                        <Badge variant="outline" className="px-1 py-0 sm:px-2 sm:py-0.5 text-[8px] sm:text-xs scale-[0.8] sm:scale-100 origin-left whitespace-nowrap">Ngoài ca</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell className="px-1 py-0.5 sm:px-3 sm:py-2 text-right font-black text-[#007a55] text-[9px] sm:text-sm">{currency.format(expense.amount)}</TableCell>
+                    <TableCell className="px-1 py-0.5 sm:px-3 sm:py-2 text-right whitespace-nowrap">
+                      <Button variant="ghost" size="icon" className="h-4 w-4 sm:h-7 sm:w-7 inline-flex" onClick={() => openEdit(expense)}>
+                        <EditIcon className="h-3 w-3 sm:h-4 sm:w-4 text-[#022c22]" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-4 w-4 sm:h-7 sm:w-7 inline-flex"
+                        disabled={deleteMutation.isPending}
+                        onClick={() => {
+                          if (confirm('Bạn có chắc muốn xóa khoản chi này?')) {
+                            deleteMutation.mutate(expense.id)
+                          }
+                        }}
                       >
-                        <ImageIcon className="h-3 w-3" />
-                        Xem hóa đơn
-                      </a>
-                    )}
-                  </TableCell>
-                  <TableCell><Badge variant="secondary">{typeLabel(expense.type)}</Badge></TableCell>
-                  <TableCell>{new Date(expense.incurredAt).toLocaleString('vi-VN')}</TableCell>
-                  <TableCell>{expense.createdByName}</TableCell>
-                  <TableCell>
-                    {expense.shiftId ? <Badge>Trong ca #{expense.shiftId}</Badge> : <Badge variant="outline">Ngoài ca</Badge>}
-                  </TableCell>
-                  <TableCell className="text-right font-bold">{currency.format(expense.amount)}</TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="icon" onClick={() => openEdit(expense)}>
-                      <EditIcon className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      disabled={deleteMutation.isPending}
-                      onClick={() => {
-                        if (confirm('Bạn có chắc muốn xóa khoản chi này?')) {
-                          deleteMutation.mutate(expense.id)
-                        }
-                      }}
-                    >
-                      <TrashIcon className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
+                        <TrashIcon className="h-3 w-3 sm:h-4 sm:w-4 text-destructive" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
 
       {(pageData?.totalPages ?? 0) > 1 && (
         <div className="flex items-center justify-center gap-3">

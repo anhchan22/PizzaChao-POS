@@ -109,13 +109,13 @@ function OrderDetailsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[92vh] overflow-y-auto border-[#e5e7eb] bg-white text-[#022c22] shadow-[0_1px_2px_rgba(0,0,0,0.05)] sm:max-w-[640px]">
-        <DialogHeader>
+      <DialogContent className="max-h-[92vh] overflow-y-auto border-[#e5e7eb] bg-white text-[#022c22] shadow-[0_1px_2px_rgba(0,0,0,0.05)] p-2 md:p-4 sm:max-w-[500px] rounded-xl md:rounded-2xl">
+        <DialogHeader className="p-0.5">
           <DialogTitle className="pr-8">
-            <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center justify-between gap-1.5">
               <div>
-                <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-[#71717a]">Chi tiết đơn</p>
-                <h2 className="mt-0.5 text-lg font-black tracking-[-0.03em] text-[#022c22]">
+                <p className="text-[8px] md:text-[9px] font-medium uppercase tracking-[0.16em] text-[#71717a]">Chi tiết đơn</p>
+                <h2 className="mt-0.5 text-sm md:text-base font-black tracking-[-0.03em] text-[#022c22]">
                   #{order.queueNumber} · {order.orderCode}
                 </h2>
               </div>
@@ -124,8 +124,8 @@ function OrderDetailsDialog({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-3 py-1">
-          <div className="grid gap-2 rounded-xl border border-[#e5e7eb] bg-[#f5f5f5] p-3 text-xs sm:grid-cols-2">
+        <div className="space-y-2 py-0.5">
+          <div className="grid gap-1.5 rounded-lg border border-[#e5e7eb] bg-[#f5f5f5] p-2 md:p-2.5 text-[10px] md:text-[11px] grid-cols-2">
             <Info label="Khách hàng" value={order.customerName || 'Khách lẻ'} />
             <Info label="Số điện thoại" value={order.customerPhone || '—'} />
             <Info label="Nhân viên tạo" value={order.createdBy} />
@@ -142,43 +142,47 @@ function OrderDetailsDialog({
           </div>
 
           {order.note && (
-            <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-[#022c22]">
-              <p className="font-semibold">Ghi chú đơn</p>
-              <p className="mt-1 text-[#3d3d3f]">{order.note}</p>
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-1.5 md:p-2 text-[10px] md:text-[11px] text-[#022c22]">
+              <p className="font-semibold text-amber-800">Ghi chú đơn</p>
+              <p className="mt-0.5 text-[#3d3d3f]">{order.note}</p>
             </div>
           )}
 
-          <div className="space-y-2">
-            <h3 className="text-sm font-black tracking-[-0.025em] text-[#022c22]">Món cần chuẩn bị</h3>
-            {order.items.map((item) => (
-              <div key={item.id} className="rounded-xl border border-[#e5e7eb] bg-white p-3">
-                <div className="flex justify-between gap-3">
-                  <div>
-                    <p className="text-sm font-black text-[#022c22]">{item.quantity} × {item.productName}</p>
-                    <Badge className="mt-1 rounded-full border-[#e5e7eb] bg-white px-2 py-0 text-[10px] text-[#007a55] hover:bg-white">
-                      {item.sizeName}
-                    </Badge>
+          <div className="space-y-1.5">
+            <h3 className="text-[11px] md:text-xs font-black tracking-[-0.025em] text-[#022c22]">Món cần chuẩn bị</h3>
+            <div className="space-y-1">
+              {order.items.map((item) => (
+                <div key={item.id} className="rounded-lg border border-[#e5e7eb] bg-white p-1.5 md:p-2">
+                  <div className="flex justify-between gap-2 items-start">
+                    <div className="min-w-0 flex flex-wrap items-center gap-1">
+                      <span className="text-[11px] md:text-xs font-black text-[#022c22]">
+                        {item.quantity} × {item.productName}
+                      </span>
+                      <Badge className="rounded-full border-[#e5e7eb] bg-white px-1 py-0 text-[8px] md:text-[9px] text-[#007a55] hover:bg-white whitespace-nowrap scale-90 origin-left">
+                        {item.sizeName}
+                      </Badge>
+                    </div>
+                    <p className="text-[11px] md:text-xs font-black text-[#022c22] shrink-0">{currency.format(item.totalPrice)}</p>
                   </div>
-                  <p className="text-sm font-black text-[#022c22]">{currency.format(item.totalPrice)}</p>
+                  {item.options.length > 0 && (
+                    <p className="mt-0.5 text-[8px] md:text-[9px] text-[#71717a]">
+                      Topping: {item.options.map((option) => option.optionName).join(', ')}
+                    </p>
+                  )}
+                  {item.note && <p className="mt-0.5 text-[8px] md:text-[9px] font-semibold text-amber-700">{item.note}</p>}
                 </div>
-                {item.options.length > 0 && (
-                  <p className="mt-1.5 text-xs text-[#71717a]">
-                    Topping: {item.options.map((option) => option.optionName).join(', ')}
-                  </p>
-                )}
-                {item.note && <p className="mt-1 text-xs font-semibold text-amber-700">{item.note}</p>}
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
 
           {order.cancelReason && (
-            <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs">
+            <div className="rounded-lg border border-red-200 bg-red-50 p-1.5 md:p-2 text-[10px] md:text-[11px]">
               <p className="font-semibold text-red-700">Lý do hủy</p>
-              <p className="mt-1 text-[#3d3d3f]">{order.cancelReason}</p>
+              <p className="mt-0.5 text-[#3d3d3f]">{order.cancelReason}</p>
             </div>
           )}
 
-          <div className="flex items-center justify-between border-t border-[#e5e7eb] pt-3 text-base font-black">
+          <div className="flex items-center justify-between border-t border-[#e5e7eb] pt-2 text-xs md:text-sm font-black">
             <span>Tổng đơn</span>
             <span className="text-[#007a55]">{currency.format(order.totalAmount)}</span>
           </div>
@@ -191,7 +195,7 @@ function OrderDetailsDialog({
 function Info({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-[#71717a]">{label}</p>
+      <p className="text-[8px] md:text-[9px] font-medium uppercase tracking-[0.05em] text-[#71717a]">{label}</p>
       <p className="mt-0.5 font-semibold text-[#022c22]">{value}</p>
     </div>
   )
@@ -270,6 +274,8 @@ export default function OrderHistoryPage() {
     },
   })
 
+
+
   const changeTab = (value: OrderQueueFilter) => {
     if (value === tab) return
     setTab(value)
@@ -309,29 +315,29 @@ export default function OrderHistoryPage() {
               </div>
 
               <div className="flex flex-col gap-4">
-                <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+                <div className="grid grid-cols-4 gap-1 md:gap-3">
                   {tabs.map(({ value, label, icon: Icon }) => (
                     <button
                       type="button"
                       key={value}
                       onClick={() => changeTab(value)}
                       className={cn(
-                        'group flex min-h-12 cursor-pointer items-center gap-2.5 rounded-2xl border p-2 pr-4 text-left transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#10b981]',
+                        'group flex flex-col md:flex-row min-h-[52px] md:min-h-12 cursor-pointer items-center justify-center md:justify-start gap-0.5 md:gap-2.5 rounded-lg md:rounded-2xl border p-1 md:p-2 md:pr-4 text-center md:text-left transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#10b981]',
                         tab === value
                           ? 'border-[#00bc7d] bg-[#00bc7d] text-white shadow-[0_1px_2px_rgba(0,0,0,0.05)]'
                           : 'border-[#e5e7eb] bg-white text-[#022c22] hover:border-[#10b981] hover:bg-[#f5f5f5]',
                       )}
                     >
                       <span className={cn(
-                        'grid h-10 w-10 shrink-0 place-items-center rounded-xl border transition-colors',
+                        'grid h-5 w-5 md:h-10 md:w-10 shrink-0 place-items-center rounded-md md:rounded-xl border transition-colors',
                         tab === value
                           ? 'border-white/20 bg-white/20 text-white'
                           : 'border-[#e5e7eb] bg-[#f5f5f5] text-[#007a55] group-hover:bg-[#d2f2e7]',
                       )}>
-                        <Icon className="h-4 w-4" />
+                        <Icon className="h-3 w-3 md:h-4 md:w-4" />
                       </span>
-                      <span className="flex-1 overflow-hidden">
-                        <span className="block truncate text-sm font-black tracking-[-0.02em]">{label}</span>
+                      <span className="min-w-0 overflow-hidden">
+                        <span className="block truncate text-[9px] md:text-sm font-black tracking-[-0.02em]">{label}</span>
                       </span>
                     </button>
                   ))}
@@ -360,7 +366,7 @@ export default function OrderHistoryPage() {
           />
         ) : (
           <section className={cn(
-            "grid gap-3 transition-opacity duration-150",
+            "grid gap-2 md:gap-3 transition-opacity duration-150",
             ordersQuery.isFetching && "opacity-70",
             tab === 'UNFINISHED' ? "sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" : "xl:grid-cols-2"
           )}>
@@ -368,100 +374,99 @@ export default function OrderHistoryPage() {
               <article
                 key={order.id}
                 className={cn(
-                  'group overflow-hidden rounded-2xl border border-[#e5e7eb] bg-white shadow-[0_1px_2px_rgba(0,0,0,0.05)] transition-colors duration-200 hover:border-[#10b981]',
+                  'group overflow-hidden rounded-xl md:rounded-2xl border border-[#e5e7eb] bg-white shadow-[0_1px_2px_rgba(0,0,0,0.05)] transition-colors duration-200 hover:border-[#10b981]',
                   order.status === 'PROCESSING' && 'border-amber-200',
                 )}
               >
-                <div className={cn('border-b border-[#e5e7eb] bg-gradient-to-br p-3', statusTone(order.status))}>
-                  <div className="flex items-start justify-between gap-3">
+                <div className={cn('border-b border-[#e5e7eb] bg-gradient-to-br px-2 py-1 md:px-2.5 md:py-1.5', statusTone(order.status))}>
+                  <div className="flex items-start justify-between gap-1.5 md:gap-2">
                     <div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-2xl font-black leading-none tracking-[-0.04em] text-[#022c22]">
+                      <div className="flex flex-wrap items-center gap-1">
+                        <span className="text-sm md:text-xl font-black leading-none tracking-[-0.04em] text-[#022c22]">
                           #{order.queueNumber}
                         </span>
                         <StatusPill status={order.status} />
                       </div>
-                      <p className="mt-1 text-xs font-medium text-[#71717a]">
+                      <p className="mt-0.5 text-[9px] md:text-[10px] font-medium text-[#71717a]">
                         {format(new Date(order.createdAt), 'HH:mm dd/MM')}
                       </p>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <div className="px-3 py-1 text-right">
-                        {/* <p className="text-[10px] font-medium uppercase tracking-[0.1em] text-[#71717a]">Tổng</p> */}
-                        <p className="text-sm font-black text-[#007a55]">{currency.format(order.totalAmount)}</p>
+                    <div className="flex items-center gap-1 md:gap-1.5">
+                      <div className="px-1 md:px-2 text-right">
+                        <p className="text-[11px] md:text-xs font-black text-[#007a55]">{currency.format(order.totalAmount)}</p>
                       </div>
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-10 w-10 shrink-0 rounded-full border border-[#e5e7eb] bg-white text-[#71717a] shadow-[0_1px_2px_rgba(0,0,0,0.05)] opacity-0 transition-opacity focus-visible:opacity-100 group-hover:opacity-100 hover:border-[#10b981] hover:text-[#007a55]"
+                        className="h-6 w-6 md:h-8 md:w-8 shrink-0 rounded-full border border-[#e5e7eb] bg-white text-[#71717a] shadow-[0_1px_2px_rgba(0,0,0,0.05)] opacity-0 transition-opacity focus-visible:opacity-100 group-hover:opacity-100 hover:border-[#10b981] hover:text-[#007a55]"
                         onClick={() => {
                           setSelectedOrder(order)
                           setDetailsOpen(true)
                         }}
                       >
-                        <MoreHorizontal className="h-4 w-4" />
+                        <MoreHorizontal className="h-3.5 w-3.5" />
                       </Button>
                     </div>
                   </div>
                 </div>
 
                 {tab === 'UNFINISHED' && (
-                  <div className="space-y-3 p-3">
-                    <div className="grid gap-2">
+                  <div className="space-y-1.5 p-1.5 md:p-2">
+                    <div className="grid gap-0.5 md:gap-1">
                       {order.items.slice(0, 4).map((item) => (
-                        <div key={item.id} className="rounded-xl border border-[#e5e7eb] bg-white px-3 py-2">
-                          <div className="flex justify-between gap-2 text-xs text-[#022c22]">
-                            <span className="font-medium">
+                        <div key={item.id} className="rounded-md border border-[#e5e7eb]/80 bg-white px-1.5 py-0.5 md:px-2 md:py-1">
+                          <div className="flex justify-between gap-1.5 text-[10px] md:text-[11px] text-[#022c22]">
+                            <span className="font-medium truncate">
                               <strong className="font-black">{item.quantity}×</strong> {item.productName}
                             </span>
-                            <span className="rounded-full bg-[#f5f5f5] px-2 py-0.5 text-[10px] font-bold text-[#007a55]">
+                            <span className="shrink-0 rounded-full bg-[#f5f5f5] px-1.5 py-0 md:px-2 md:py-0.5 text-[8px] md:text-[9px] font-bold text-[#007a55]">
                               {item.sizeName}
                             </span>
                           </div>
                           {item.options.length > 0 && (
-                            <p className="mt-1 text-[11px] leading-4 text-[#71717a]">
+                            <p className="mt-0.5 text-[8px] md:text-[9px] leading-3 text-[#71717a] truncate">
                               {item.options.map((option) => option.optionName).join(', ')}
                             </p>
                           )}
                         </div>
                       ))}
                       {order.items.length > 4 && (
-                      <p className="px-1 text-[11px] font-medium text-[#71717a]">+ {order.items.length - 4} món khác</p>
+                        <p className="px-1 text-[9px] md:text-[10px] font-medium text-[#71717a]">+ {order.items.length - 4} món khác</p>
                       )}
                     </div>
 
                     {order.note && (
-                      <p className="rounded-xl border border-amber-200 bg-amber-50 p-2 text-xs font-semibold text-amber-700">
+                      <p className="rounded-md border border-amber-200 bg-amber-50 p-1 md:p-1.5 text-[9px] md:text-[10px] font-semibold text-amber-700 truncate">
                         {order.note}
                       </p>
                     )}
 
                     {(order.status === 'PENDING' || order.status === 'PROCESSING') && (
-                      <div className="flex flex-wrap justify-end gap-2 border-t border-[#e5e7eb] pt-3">
+                      <div className="flex flex-wrap justify-end gap-1.5 border-t border-[#e5e7eb] pt-1.5 md:pt-2">
                         <Button
                           variant="outline"
                           size="sm"
-                          className="h-8 rounded-full border-red-200 px-3 text-xs text-red-700 hover:bg-red-50 hover:text-red-700"
+                          className="h-6 md:h-7 rounded-full border-red-200 px-2 md:px-2.5 text-[9px] md:text-[10px] text-red-700 hover:bg-red-50 hover:text-red-700"
                           onClick={() => {
                             setCancelOrder(order)
                             setCancelReason('')
                           }}
                         >
-                          <XCircle className="mr-1.5 h-3.5 w-3.5" />
+                          <XCircle className="mr-1 h-3 w-3" />
                           Hủy đơn
                         </Button>
                         <Button
                           size="sm"
-                          className="h-8 rounded-full bg-[#00bc7d] px-3 text-xs font-bold text-white shadow-[0_1px_2px_rgba(0,0,0,0.05)] hover:bg-[#007a55]"
+                          className="h-6 md:h-7 rounded-full bg-[#00bc7d] px-2 md:px-2.5 text-[9px] md:text-[10px] font-bold text-white shadow-[0_1px_2px_rgba(0,0,0,0.05)] hover:bg-[#007a55]"
                           disabled={statusMutation.isPending}
                           onClick={() => finishOrder(order)}
                         >
                           {statusMutation.isPending ? (
-                            <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                            <Loader2 className="mr-1 h-3 w-3 animate-spin" />
                           ) : (
-                            <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" />
+                            <CheckCircle2 className="mr-1 h-3 w-3" />
                           )}
-                          Xác nhận đã xong
+                          Xong
                         </Button>
                       </div>
                     )}

@@ -223,26 +223,18 @@ export function DashboardPage() {
   }
 
   return (
-    <div className="min-h-[calc(100vh-1.5rem)] rounded-2xl bg-[#d2f2e7] p-3 text-[#022c22] sm:p-4">
-      <div className="w-full space-y-4">
-        <section className="grid w-full gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(360px,0.9fr)]">
+    <div className="min-h-[calc(100vh-1.5rem)] rounded-2xl bg-[#d2f2e7] p-1.5 text-[#022c22] sm:p-4">
+      <div className="w-full space-y-1.5 sm:space-y-3">
+        <section className="grid w-full gap-1.5 sm:gap-3 xl:grid-cols-[minmax(0,2fr)_minmax(360px,0.9fr)]">
           <Card className={cn(
-            'overflow-hidden border-[#e5e7eb] bg-white shadow-[0_1px_2px_rgba(0,0,0,0.05)] pt-0',
+            'overflow-hidden border-[#e5e7eb] bg-white shadow-[0_1px_2px_rgba(0,0,0,0.05)] pt-0 rounded-xl',
             activeShift ? 'ring-1 ring-emerald-200' : 'ring-1 ring-amber-200',
           )}>
-            <CardHeader className="border-b border-[#e5e7eb] bg-gradient-to-br from-[#d2f2e7] to-white pt-5 pb-4">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <CardTitle className="flex items-center gap-2 text-2xl font-black tracking-[-0.04em] text-[#022c22]">
-                    <Store className="h-6 w-6 text-[#007a55]" />
-                    Ca làm việc hôm nay
-                  </CardTitle>
-                  <CardDescription className="mt-1 text-[#71717a]">
-                    {activeShift ? 'Ca đang mở, sẵn sàng bán hàng.' : 'Chưa có ca đang mở. Hãy mở ca trước khi bán hàng.'}
-                  </CardDescription>
-                </div>
+            <CardHeader className="border-b border-[#e5e7eb] bg-gradient-to-br from-[#d2f2e7] to-white p-1.5 sm:p-3">
+              <div className="flex items-center gap-1.5">
+                <Store className="h-4 w-4 sm:h-5 sm:w-5 text-[#007a55]" />
                 <span className={cn(
-                  'rounded-full border px-3 py-1 text-xs font-bold',
+                  'rounded-full border px-2 py-0.5 text-[10px] font-bold',
                   activeShift
                     ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
                     : 'border-amber-200 bg-amber-50 text-amber-700',
@@ -251,50 +243,50 @@ export function DashboardPage() {
                 </span>
               </div>
             </CardHeader>
-            <CardContent className="p-4">
+            <CardContent className="p-1.5 sm:p-3">
               {currentShiftQuery.isLoading ? (
-                <div className="flex items-center gap-2 py-4 text-sm text-[#71717a]">
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                <div className="flex items-center gap-1.5 py-2 text-xs text-[#71717a]">
+                  <Loader2 className="h-3 w-3 animate-spin" />
                   Đang kiểm tra ca làm việc...
                 </div>
               ) : currentShiftQuery.isError ? (
-                <div className="space-y-3 py-2">
-                  <p className="text-sm text-destructive">Không thể tải thông tin ca làm việc.</p>
-                  <Button variant="outline" size="sm" onClick={() => currentShiftQuery.refetch()}>
+                <div className="space-y-1 py-1">
+                  <p className="text-xs text-destructive">Không thể tải thông tin ca làm việc.</p>
+                  <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => currentShiftQuery.refetch()}>
                     Thử lại
                   </Button>
                 </div>
               ) : activeShift ? (
-                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                <div className="grid grid-cols-2 gap-1.5 sm:gap-2.5 xl:grid-cols-4">
                   <ShiftInfo label="Người mở ca" value={activeShift.openedByName} />
                   <ShiftInfo label="Mở lúc" value={new Date(activeShift.openedAt).toLocaleString('vi-VN')} />
                   <ShiftInfo label="Đã chạy" value={activeShiftDuration ?? '—'} />
                   <ShiftInfo label="Tiền đầu ca" value={currency.format(activeShift.startingCash)} />
-                  <ShiftInfo label="Tiền mặt dự kiến" value={currency.format(activeShift.expectedCash)} highlight />
+                  <ShiftInfo label="Tổng tiền mặt" value={currency.format(activeShift.expectedCash)} highlight />
                   <ShiftInfo label="Tiền mặt trong ca" value={currency.format(dashData?.cashRevenue ?? 0)} />
-                  <ShiftInfo label="Chuyển khoản trong ca" value={currency.format(dashData?.transferRevenue ?? 0)} />
-                  <ShiftInfo label="Số đơn trong ca" value={String(dashData?.todayOrders ?? 0)} />
+                  <ShiftInfo label="Tiền chuyển khoản" value={currency.format(dashData?.transferRevenue ?? 0)} />
+                  <ShiftInfo label="Số đơn" value={String(dashData?.todayOrders ?? 0)} />
                 </div>
               ) : (
-                <div className="rounded-xl border border-dashed border-amber-300 bg-amber-50 p-4 text-sm text-amber-800">
+                <div className="rounded-xl border border-dashed border-amber-300 bg-amber-50 p-3 text-xs text-amber-800">
                   Mở ca và nhập tiền mặt đầu ca trước khi sử dụng máy POS. Nếu chưa mở ca, nhân viên sẽ không thể tạo đơn.
                 </div>
               )}
               {activeShift?.openingNote && (
-                <p className="mt-3 rounded-xl border border-[#e5e7eb] bg-[#f5f5f5] p-3 text-sm text-[#71717a]">
+                <p className="mt-2 rounded-lg border border-[#e5e7eb] bg-[#f5f5f5] p-2 text-xs text-[#71717a]">
                   Ghi chú đầu ca: {activeShift.openingNote}
                 </p>
               )}
             </CardContent>
-            <CardFooter className="border-t border-[#e5e7eb] bg-white p-4">
+            <CardFooter className="border-t border-[#e5e7eb] bg-white p-1.5 sm:p-3">
               {activeShift ? (
-                <div className="flex w-full flex-wrap gap-2">
-                  <Button className="rounded-full bg-[#00bc7d] px-5 text-white hover:bg-[#007a55]" onClick={() => navigate('/pos')}>
-                    Vào máy POS <ArrowRight className="ml-2 h-4 w-4" />
+                <div className="flex w-full flex-wrap gap-1">
+                  <Button className="h-7 sm:h-9 rounded-full bg-[#00bc7d] px-3.5 text-xs text-white hover:bg-[#007a55] sm:text-sm" onClick={() => navigate('/pos')}>
+                    Vào máy POS <ArrowRight className="ml-1 h-3 w-3" />
                   </Button>
                   <Button
                     variant="destructive"
-                    className="rounded-full px-5"
+                    className="h-7 sm:h-9 rounded-full px-3.5 text-xs sm:text-sm"
                     onClick={() => {
                       setActualCash('')
                       setClosingNote('')
@@ -308,7 +300,7 @@ export function DashboardPage() {
                 </div>
               ) : (
                 <Button
-                  className="rounded-full bg-[#00bc7d] px-5 text-white hover:bg-[#007a55]"
+                  className="h-8 sm:h-9 rounded-full bg-[#00bc7d] px-3.5 text-xs text-white hover:bg-[#007a55] sm:text-sm"
                   disabled={currentShiftQuery.isLoading || currentShiftQuery.isError}
                   onClick={() => {
                     setStartingCash('')
@@ -329,7 +321,7 @@ export function DashboardPage() {
           />
         </section>
 
-        <section className="grid w-full gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <section className="grid grid-cols-3 gap-1 md:gap-3 xl:grid-cols-4">
           <OperationMetric
             title="Tổng thu trong ca"
             value={dashboardQuery.isLoading ? '...' : currency.format(dashData?.todayRevenue ?? 0)}
@@ -348,40 +340,42 @@ export function DashboardPage() {
             icon={TrendingUp}
             tone="amber"
           />
-          <OperationMetric
-            title="Số đơn hàng"
-            value={dashboardQuery.isLoading ? '...' : String(dashData?.todayOrders ?? 0)}
-            icon={ShoppingCart}
-            tone="blue"
-          />
+          <div className="col-span-3 sm:col-span-1">
+            <OperationMetric
+              title="Số đơn hàng"
+              value={dashboardQuery.isLoading ? '...' : String(dashData?.todayOrders ?? 0)}
+              icon={ShoppingCart}
+              tone="blue"
+            />
+          </div>
         </section>
 
-        <section className="grid w-full gap-4 xl:grid-cols-2">
-          <Card className="border-[#e5e7eb] bg-white shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-lg font-black tracking-[-0.03em] text-[#022c22]">
-                <PackageSearch className="h-5 w-5 text-[#007a55]" />
+        <section className="grid w-full gap-2.5 md:gap-4 xl:grid-cols-2">
+          <Card className="border-[#e5e7eb] bg-white shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-xl">
+            <CardHeader className="p-2.5 md:p-5 pb-1 md:pb-2.5">
+              <CardTitle className="flex items-center gap-1.5 text-xs md:text-xl font-black tracking-[-0.03em] text-[#022c22]">
+                <PackageSearch className="h-4 w-4 md:h-5 md:w-5 text-[#007a55]" />
                 Top món bán chạy trong ca
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-2">
+            <CardContent className="p-2.5 pt-0 md:p-5 md:pt-0 space-y-1.5 md:space-y-2">
               {dashboardQuery.isLoading ? (
                 <LoadingLine text="Đang tải top món..." />
               ) : topProducts.length === 0 ? (
                 <EmptyLine text="Ca này chưa có món nào được bán." />
               ) : (
                 topProducts.slice(0, 6).map((product, index) => (
-                  <div key={`${product.productName}-${index}`} className="flex items-center justify-between rounded-xl border border-[#e5e7eb] bg-[#f5f5f5] px-3 py-2">
-                    <div className="flex min-w-0 items-center gap-3">
-                      <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-white text-xs font-black text-[#007a55]">
+                  <div key={`${product.productName}-${index}`} className="flex items-center justify-between rounded-lg md:rounded-xl border border-[#e5e7eb] bg-[#f5f5f5] px-2.5 py-1.5 md:px-3 md:py-2">
+                    <div className="flex min-w-0 items-center gap-2 md:gap-3">
+                      <span className="grid h-6 w-6 md:h-7 md:w-7 shrink-0 place-items-center rounded-full bg-white text-[10px] md:text-xs font-black text-[#007a55]">
                         {index + 1}
                       </span>
                       <div className="min-w-0">
-                        <p className="truncate text-sm font-bold text-[#022c22]">{product.productName}</p>
-                        <p className="text-xs text-[#71717a]">{currency.format(product.revenue)}</p>
+                        <p className="truncate text-xs md:text-sm font-bold text-[#022c22]">{product.productName}</p>
+                        <p className="text-[10px] md:text-xs text-[#71717a]">{currency.format(product.revenue)}</p>
                       </div>
                     </div>
-                    <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-[#007a55]">
+                    <span className="rounded-full bg-white px-2 py-0.5 md:px-3 md:py-1 text-[10px] md:text-xs font-bold text-[#007a55]">
                       {product.quantitySold} món
                     </span>
                   </div>
@@ -390,14 +384,14 @@ export function DashboardPage() {
             </CardContent>
           </Card>
 
-          <Card className="border-[#e5e7eb] bg-white shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-lg font-black tracking-[-0.03em] text-[#022c22]">
-                <Clock3 className="h-5 w-5 text-[#007a55]" />
+          <Card className="border-[#e5e7eb] bg-white shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-xl">
+            <CardHeader className="p-2.5 md:p-5 pb-1 md:pb-2.5">
+              <CardTitle className="flex items-center gap-1.5 text-xs md:text-xl font-black tracking-[-0.03em] text-[#022c22]">
+                <Clock3 className="h-4 w-4 md:h-5 md:w-5 text-[#007a55]" />
                 Hoạt động gần đây
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-2">
+            <CardContent className="p-2.5 pt-0 md:p-5 md:pt-0 space-y-1.5 md:space-y-2">
               {recentOrdersQuery.isLoading ? (
                 <LoadingLine text="Đang tải đơn gần đây..." />
               ) : recentOrders.length === 0 ? (
@@ -408,9 +402,9 @@ export function DashboardPage() {
                 ))
               )}
             </CardContent>
-            <CardFooter className="justify-end border-t border-[#e5e7eb] pt-3">
-              <Button variant="outline" className="rounded-full" size="sm" onClick={() => navigate('/admin/orders')}>
-                Xem hàng đợi đơn <ArrowRight className="ml-2 h-4 w-4" />
+            <CardFooter className="p-2.5 pt-0 md:p-5 md:pt-0 justify-end border-t border-[#e5e7eb] pt-2 md:pt-3">
+              <Button variant="outline" className="rounded-full h-7 text-xs px-2.5" size="sm" onClick={() => navigate('/admin/orders')}>
+                Xem hàng đợi đơn <ArrowRight className="ml-1 h-3 w-3" />
               </Button>
             </CardFooter>
           </Card>
@@ -455,21 +449,21 @@ export function DashboardPage() {
       </Dialog>
 
       <Dialog open={closeDialog} onOpenChange={setCloseDialog}>
-        <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-[760px]">
-          <DialogHeader><DialogTitle>Đóng ca và đối soát tiền</DialogTitle></DialogHeader>
-          <div className="space-y-4 py-3">
-            <div className="rounded-lg bg-muted p-4 text-sm">
+        <DialogContent className="max-h-[92vh] overflow-y-auto p-3 sm:p-6 sm:max-w-[760px] rounded-2xl">
+          <DialogHeader><DialogTitle className="text-sm md:text-lg">Đóng ca và đối soát tiền</DialogTitle></DialogHeader>
+          <div className="space-y-2.5 py-1 md:space-y-4 md:py-3">
+            <div className="rounded-lg bg-muted p-2 md:p-4 text-[11px] md:text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Tiền đầu ca</span>
                 <span className="font-medium">{currency.format(activeShift?.startingCash ?? 0)}</span>
               </div>
-              <div className="mt-2 flex justify-between">
+              <div className="mt-1 md:mt-2 flex justify-between">
                 <span className="text-muted-foreground">Tiền dự kiến</span>
                 <span className="font-semibold">{currency.format(activeShift?.expectedCash ?? 0)}</span>
               </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="actualCash">Tiền mặt thực tế cuối ca (VNĐ)</Label>
+            <div className="space-y-1">
+              <Label htmlFor="actualCash" className="text-[11px] md:text-sm">Tiền mặt thực tế cuối ca (VNĐ)</Label>
               <Input
                 id="actualCash"
                 type="number"
@@ -477,18 +471,19 @@ export function DashboardPage() {
                 step="1000"
                 value={actualCash}
                 onChange={(event) => setActualCash(event.target.value)}
+                className="h-8 md:h-10 text-[11px] md:text-sm"
               />
             </div>
             {actualCash && Number.isFinite(parsedActualCash) && (
-              <div className={`rounded-lg border p-3 text-sm ${cashDifference === 0 ? 'border-emerald-500/30 bg-emerald-500/10' : 'border-amber-500/30 bg-amber-500/10'}`}>
+              <div className={`rounded-md border p-2 text-xs ${cashDifference === 0 ? 'border-emerald-500/30 bg-emerald-500/10' : 'border-amber-500/30 bg-amber-500/10'}`}>
                 <div className="flex justify-between">
                   <span>Chênh lệch</span>
                   <span className="font-semibold">{currency.format(cashDifference)}</span>
                 </div>
               </div>
             )}
-            <div className="space-y-2">
-              <Label htmlFor="closingNote">
+            <div className="space-y-1">
+              <Label htmlFor="closingNote" className="text-[11px] md:text-sm">
                 Ghi chú đóng ca {cashDifference !== 0 ? '(bắt buộc khi có chênh lệch)' : ''}
               </Label>
               <Textarea
@@ -496,20 +491,22 @@ export function DashboardPage() {
                 maxLength={500}
                 value={closingNote}
                 onChange={(event) => setClosingNote(event.target.value)}
+                className="min-h-10 md:min-h-16 text-[11px] md:text-sm"
               />
             </div>
-            <div className="space-y-3 rounded-lg border p-3">
-              <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="space-y-2 rounded-lg border p-2 md:p-3">
+              <div className="flex flex-wrap items-center justify-between gap-1">
                 <div>
-                  <Label>Kiểm kê vật tư cuối ca</Label>
-                  <p className="mt-1 text-xs text-muted-foreground">
+                  <Label className="text-[11px] md:text-sm font-bold">Kiểm kê vật tư cuối ca</Label>
+                  {/* <p className="mt-0.5 text-[9px] md:text-xs text-muted-foreground">
                     Có thể điền nhanh theo số dự kiến rồi chỉnh lại dòng nào cần.
-                  </p>
+                  </p> */}
                 </div>
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
+                  className="h-7 text-[10px] px-2 rounded-full"
                   disabled={inventoryQuery.isLoading || (inventoryQuery.data?.data ?? []).length === 0}
                   onClick={fillExpectedInventoryCounts}
                 >
@@ -517,56 +514,62 @@ export function DashboardPage() {
                 </Button>
               </div>
               {inventoryQuery.isLoading ? (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <div className="flex items-center gap-2 text-xs md:text-sm text-muted-foreground">
                   <Loader2 className="h-4 w-4 animate-spin" />
                   Đang tải vật tư...
                 </div>
               ) : (inventoryQuery.data?.data ?? []).length === 0 ? (
-                <p className="rounded-md border border-dashed p-3 text-sm text-muted-foreground">
+                <p className="rounded-md border border-dashed p-3 text-xs md:text-sm text-muted-foreground">
                   Chưa có vật tư đang theo dõi.
                 </p>
               ) : (
-                <div className="max-h-72 space-y-2 overflow-y-auto pr-1">
+                <div className="max-h-52 md:max-h-72 grid grid-cols-2 gap-1.5 md:grid-cols-1 md:gap-2 overflow-y-auto pr-1">
                   {(inventoryQuery.data?.data ?? []).map((item) => (
                     <div
                       key={item.id}
-                      className="grid gap-3 rounded-md bg-muted/50 p-3 md:grid-cols-3 md:items-center"
+                      className="flex flex-col gap-1 rounded-md bg-muted/50 p-1.5 md:grid md:grid-cols-[1fr_80px_60px] md:gap-3 md:p-3 md:items-center"
                     >
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold">{item.name}</p>
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          dự kiến: <span>{item.estimatedRemaining}</span>
+                      <div className="min-w-0 flex items-center justify-between gap-1 md:block">
+                        <p className="truncate text-[11px] md:text-sm font-semibold">{item.name}</p>
+                        <p className="text-[9px] md:text-xs text-muted-foreground whitespace-nowrap">
+                          <span className="md:hidden">dk: </span>
+                          <span className="hidden md:inline">dự kiến: </span>
+                          {item.estimatedRemaining}
                         </p>
                       </div>
 
-                      <Input
-                        type="number"
-                        min="0"
-                        step="1"
-                        value={inventoryCounts[item.id] ?? ''}
-                        onChange={(event) =>
-                          setInventoryCounts((current) => ({
-                            ...current,
-                            [item.id]: event.target.value,
-                          }))
-                        }
-                        className="h-10 border border-border bg-background/80 text-sm shadow-sm focus-visible:border-emerald-500 focus-visible:ring-emerald-500/30"
-                      />
+                      <div className="contents md:block">
+                        <div className="flex items-center gap-1.5 md:contents">
+                          <Input
+                            type="number"
+                            min="0"
+                            step="1"
+                            value={inventoryCounts[item.id] ?? ''}
+                            onChange={(event) =>
+                              setInventoryCounts((current) => ({
+                                ...current,
+                                [item.id]: event.target.value,
+                              }))
+                            }
+                            className="h-7 md:h-10 flex-1 border border-border bg-background/80 text-[10px] md:text-sm px-1.5 shadow-sm focus-visible:border-emerald-500 focus-visible:ring-emerald-500/30"
+                          />
 
-                      <div className="text-sm">
-                        <p className="text-xs text-muted-foreground">Chênh lệch</p>
-                        <p
-                          className={
-                            inventoryCounts[item.id] &&
-                            Number(inventoryCounts[item.id]) - item.estimatedRemaining !== 0
-                              ? 'font-semibold text-amber-600'
-                              : 'font-semibold text-emerald-600'
-                          }
-                        >
-                          {inventoryCounts[item.id]
-                            ? Number(inventoryCounts[item.id]) - item.estimatedRemaining
-                            : '—'}
-                        </p>
+                          <div className="text-right md:text-left text-[10px] md:text-sm min-w-[28px] md:min-w-0">
+                            <p className="hidden md:block text-xs text-muted-foreground">Chênh lệch</p>
+                            <p
+                              className={
+                                inventoryCounts[item.id] &&
+                                Number(inventoryCounts[item.id]) - item.estimatedRemaining !== 0
+                                  ? 'font-bold md:font-semibold text-amber-600'
+                                  : 'font-bold md:font-semibold text-emerald-600'
+                              }
+                            >
+                              {inventoryCounts[item.id]
+                                ? `${Number(inventoryCounts[item.id]) - item.estimatedRemaining >= 0 ? '+' : ''}${Number(inventoryCounts[item.id]) - item.estimatedRemaining}`
+                                : '—'}
+                            </p>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -574,13 +577,13 @@ export function DashboardPage() {
               )}
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setCloseDialog(false)}>Hủy</Button>
-            <Button variant="destructive" onClick={handleCloseShift} disabled={closeShiftMutation.isPending}>
-              {closeShiftMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          <div className="flex items-center gap-1.5 border-t pt-3">
+            <Button variant="outline" className="h-8 md:h-10 text-[10px] md:text-sm rounded-full px-3.5" onClick={() => setCloseDialog(false)}>Hủy</Button>
+            <Button variant="destructive" className="flex-1 h-8 md:h-10 text-[10px] md:text-sm rounded-full font-semibold" onClick={handleCloseShift} disabled={closeShiftMutation.isPending}>
+              {closeShiftMutation.isPending && <Loader2 className="mr-1.5 h-3 w-3 animate-spin" />}
               Xác nhận đóng ca
             </Button>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
@@ -589,9 +592,9 @@ export function DashboardPage() {
 
 function ShiftInfo({ label, value, highlight = false }: { label: string; value: string; highlight?: boolean }) {
   return (
-    <div className="rounded-xl border border-[#e5e7eb] bg-[#f5f5f5] p-3">
-      <p className="text-xs text-[#71717a]">{label}</p>
-      <p className={cn('mt-1 truncate text-sm font-black', highlight ? 'text-[#007a55]' : 'text-[#022c22]')}>
+    <div className="rounded-lg border border-[#e5e7eb] bg-[#f5f5f5] px-1.5 py-0.5 sm:p-2.5">
+      <p className="text-[9px] md:text-xs text-[#71717a]">{label}</p>
+      <p className={cn('mt-0.5 truncate text-[11px] md:text-xs font-black', highlight ? 'text-[#007a55]' : 'text-[#022c22]')}>
         {value}
       </p>
     </div>
@@ -604,31 +607,31 @@ function OperationMetric({
   icon: Icon,
   tone,
 }: {
-  title: string
-  value: string
-  icon: typeof Banknote
-  tone: 'emerald' | 'rose' | 'amber' | 'blue'
+  title: string;
+  value: string;
+  icon: typeof Banknote;
+  tone: 'emerald' | 'rose' | 'amber' | 'blue';
 }) {
   const toneClasses = {
     emerald: 'bg-emerald-50 text-emerald-700',
     rose: 'bg-rose-50 text-rose-700',
     amber: 'bg-amber-50 text-amber-700',
     blue: 'bg-blue-50 text-blue-700',
-  }[tone]
+  }[tone];
 
   return (
-    <Card className="border-[#e5e7eb] bg-white shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
-      <CardContent className="flex items-center justify-between gap-3 p-4">
-        <div>
-          <p className="text-xs font-medium uppercase tracking-[0.12em] text-[#71717a]">{title}</p>
-          <p className="mt-1 text-xl font-black tracking-[-0.03em] text-[#022c22]">{value}</p>
+    <Card className="border-[#e5e7eb] bg-white shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-lg">
+      <CardContent className="flex items-center justify-between gap-1 px-1 py-0.5 sm:p-3.5">
+        <div className="min-w-0">
+          <p className="text-[9px] md:text-xs font-medium uppercase tracking-[0.05em] text-[#71717a] truncate">{title}</p>
+          <p className="mt-0.5 text-xs md:text-lg font-black tracking-[-0.03em] text-[#022c22] truncate">{value}</p>
         </div>
-        <div className={cn('grid h-10 w-10 shrink-0 place-items-center rounded-full', toneClasses)}>
-          <Icon className="h-5 w-5" />
+        <div className={cn('grid h-7 w-7 md:h-9 md:w-9 shrink-0 place-items-center rounded-full', toneClasses)}>
+          <Icon className="h-3.5 w-3.5 md:h-4 md:w-4" />
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }
 
 function AlertsCard({
@@ -643,39 +646,39 @@ function AlertsCard({
   const hasAlerts = !hasActiveShift || lowStockItems.length > 0
 
   return (
-    <Card className="border-[#e5e7eb] bg-white shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-lg font-black tracking-[-0.03em] text-[#022c22]">
-          <AlertTriangle className={cn('h-5 w-5', hasAlerts ? 'text-amber-600' : 'text-emerald-600')} />
+    <Card className="border-[#e5e7eb] bg-white shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-xl">
+      <CardHeader className="p-2 md:p-4 pb-1 md:pb-2">
+        <CardTitle className="flex items-center gap-1.5 text-xs md:text-lg font-black tracking-[-0.03em] text-[#022c22]">
+          <AlertTriangle className={cn('h-4 w-4 md:h-5 md:w-5', hasAlerts ? 'text-amber-600' : 'text-emerald-600')} />
           Cảnh báo vận hành
         </CardTitle>
-        <CardDescription>Các việc cần chú ý trong ca hôm nay.</CardDescription>
+        <CardDescription className="text-[9px] md:text-xs mt-0.5">Các việc cần chú ý trong ca hôm nay.</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-2">
+      <CardContent className="p-2 pt-0 md:p-4 md:pt-0 space-y-1.5">
         {!hasActiveShift && (
-          <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-1.5 text-xs text-amber-800">
             Chưa mở ca bán hàng.
           </div>
         )}
         {lowStockItems.slice(0, 4).map((item) => (
-          <div key={item.id} className="flex items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm">
+          <div key={item.id} className="flex items-center justify-between gap-2 rounded-lg border border-amber-200 bg-amber-50 p-1.5 text-xs">
             <span className="truncate font-semibold text-amber-900">{item.name}</span>
-            <span className="shrink-0 text-xs font-bold text-amber-700">
+            <span className="shrink-0 text-[10px] font-bold text-amber-700">
               {item.currentQuantity}/{item.warningQuantity} {item.unit}
             </span>
           </div>
         ))}
         {!hasAlerts && (
-          <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">
-            <CheckCircle2 className="mr-2 inline h-4 w-4" />
-            Không có cảnh báo quan trọng.
+          <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-1.5 text-xs text-emerald-700">
+            <CheckCircle2 className="mr-1 inline h-3 w-3" />
+            Không có cảnh báo.
           </div>
         )}
       </CardContent>
       {lowStockItems.length > 0 && (
-        <CardFooter className="justify-end border-t border-[#e5e7eb] pt-3">
-          <Button variant="outline" size="sm" className="rounded-full" onClick={onOpenInventory}>
-            Xem kho vật tư <ArrowRight className="ml-2 h-4 w-4" />
+        <CardFooter className="p-2 pt-0 md:p-4 md:pt-0 justify-end border-t border-[#e5e7eb] pt-2">
+          <Button variant="outline" size="sm" className="rounded-full h-7 text-xs px-2.5" onClick={onOpenInventory}>
+            Xem kho vật tư <ArrowRight className="ml-1 h-3 w-3" />
           </Button>
         </CardFooter>
       )}
@@ -685,25 +688,25 @@ function AlertsCard({
 
 function RecentOrderRow({ order }: { order: OrderResponse }) {
   return (
-    <div className="flex items-center justify-between gap-3 rounded-xl border border-[#e5e7eb] bg-[#f5f5f5] px-3 py-2">
+    <div className="flex items-center justify-between gap-2 rounded-lg border border-[#e5e7eb] bg-[#f5f5f5] px-2 py-1 md:px-3 md:py-2">
       <div className="min-w-0">
-        <div className="flex items-center gap-2">
-          <span className="font-black text-[#022c22]">#{order.queueNumber}</span>
-          <span className={cn('rounded-full border px-2 py-0.5 text-[11px] font-bold', statusClass(order.status))}>
+        <div className="flex items-center gap-1">
+          <span className="text-xs font-black text-[#022c22]">#{order.queueNumber}</span>
+          <span className={cn('rounded-full border px-1 py-0.25 text-[9px] md:text-[10px] font-bold', statusClass(order.status))}>
             {statusLabel(order.status)}
           </span>
         </div>
-        <p className="mt-0.5 truncate text-xs text-[#71717a]">
+        <p className="mt-0.5 truncate text-[10px] md:text-xs text-[#71717a]">
           {order.customerName || 'Khách lẻ'} · {format(new Date(order.createdAt), 'HH:mm')}
         </p>
       </div>
       <div className="shrink-0 text-right">
-        <p className="text-sm font-black text-[#007a55]">{currency.format(order.totalAmount)}</p>
-        <p className="text-[11px] text-[#71717a]">
+        <p className="text-xs md:text-sm font-black text-[#007a55]">{currency.format(order.totalAmount)}</p>
+        <p className="text-[9px] md:text-[10px] text-[#71717a]">
           {order.paymentMethod === 'CASH' ? (
-            <span className="inline-flex items-center gap-1"><Banknote className="h-3 w-3" />Tiền mặt</span>
+            <span className="inline-flex items-center gap-0.5"><Banknote className="h-2 w-2 md:h-3 md:w-3" />Tiền mặt</span>
           ) : (
-            <span className="inline-flex items-center gap-1"><CreditCard className="h-3 w-3" />CK</span>
+            <span className="inline-flex items-center gap-0.5"><CreditCard className="h-2 w-2 md:h-3 md:w-3" />CK</span>
           )}
         </p>
       </div>
@@ -713,8 +716,8 @@ function RecentOrderRow({ order }: { order: OrderResponse }) {
 
 function LoadingLine({ text }: { text: string }) {
   return (
-    <div className="flex items-center gap-2 rounded-xl border border-dashed border-[#e5e7eb] p-4 text-sm text-[#71717a]">
-      <Loader2 className="h-4 w-4 animate-spin" />
+    <div className="flex items-center gap-1.5 rounded-lg border border-dashed border-[#e5e7eb] py-1.5 px-2 md:p-3 text-[11px] md:text-sm text-[#71717a]">
+      <Loader2 className="h-3 w-3 animate-spin" />
       {text}
     </div>
   )
@@ -722,7 +725,7 @@ function LoadingLine({ text }: { text: string }) {
 
 function EmptyLine({ text }: { text: string }) {
   return (
-    <div className="rounded-xl border border-dashed border-[#e5e7eb] p-4 text-sm text-[#71717a]">
+    <div className="rounded-lg border border-dashed border-[#e5e7eb] py-1.5 px-2 md:p-3 text-[11px] md:text-sm text-[#71717a]">
       {text}
     </div>
   )

@@ -48,142 +48,143 @@ export default function AttendancePage() {
   }
 
   return (
-    <div className="min-h-[calc(100vh-1.5rem)] rounded-2xl bg-[#d2f2e7] p-3 text-[#022c22] sm:p-4">
-      <div className="space-y-6 rounded-2xl border border-[#e5e7eb] bg-white/90 p-4 shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
-      <div>
-        <h1 className="flex items-center gap-2 text-2xl font-black leading-none tracking-[-0.04em] text-[#022c22] sm:text-3xl">
-          <CalendarClock className="h-7 w-7 text-primary" />
-          Chấm công
-        </h1>
-      </div>
+    <div className="min-h-[calc(100vh-1.5rem)] rounded-2xl bg-[#d2f2e7] p-1.5 text-[#022c22] sm:p-4">
+      <div className="space-y-1.5 sm:space-y-4 rounded-xl border border-[#e5e7eb] bg-white p-1.5 sm:p-6 shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
+        <div>
+          <h1 className="flex items-center gap-1 text-xs font-black leading-none tracking-[-0.04em] text-[#022c22] sm:text-3xl">
+            <CalendarClock className="h-4 w-4 sm:h-7 sm:w-7 text-[#007a55]" />
+            Chấm công
+          </h1>
+        </div>
 
-      <Card>
+        <Card className="border-[#e5e7eb] bg-white shadow-sm rounded-lg py-1 sm:py-3 px-1.5 sm:px-3">
+          <CardContent className="space-y-1.5 sm:space-y-3 px-1.5 py-0.5 sm:p-4">
+            <div className="grid gap-1.5 sm:gap-3 grid-cols-3">
+              <div className="space-y-0.5">
+                <Label htmlFor="attendanceFromDate" className="text-[8px] sm:text-xs">Từ ngày</Label>
+                <Input
+                  id="attendanceFromDate"
+                  type="date"
+                  className="h-7 sm:h-9 text-xs sm:text-sm px-2 sm:px-3"
+                  value={fromDate}
+                  onChange={(event) => setFromDate(event.target.value)}
+                />
+              </div>
+              <div className="space-y-0.5">
+                <Label htmlFor="attendanceToDate" className="text-[8px] sm:text-xs">Đến ngày</Label>
+                <Input
+                  id="attendanceToDate"
+                  type="date"
+                  className="h-7 sm:h-9 text-xs sm:text-sm px-2 sm:px-3"
+                  value={toDate}
+                  onChange={(event) => setToDate(event.target.value)}
+                />
+              </div>
+              <div className="space-y-0.5">
+                <Label className="text-[8px] sm:text-xs">Trạng thái ca</Label>
+                <Select value={status} onValueChange={(value) => setStatus(value as AttendanceStatus)}>
+                  <SelectTrigger className="h-7 sm:h-9 text-xs sm:text-sm px-2 sm:px-3"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="CLOSED" className="text-xs sm:text-sm">Đã đóng</SelectItem>
+                    <SelectItem value="OPEN" className="text-xs sm:text-sm">Đang mở</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            {rangeInvalid && (
+              <p className="rounded-md border border-destructive/40 bg-destructive/10 px-2 py-1 text-[9px] sm:text-sm text-destructive">
+                Khoảng thời gian xem chấm công tối đa là 1 tháng.
+              </p>
+            )}
+          </CardContent>
+        </Card>
 
-        <CardContent className="space-y-3">
-          <div className="grid gap-3 md:grid-cols-3">
-            <div className="space-y-2">
-              <Label htmlFor="attendanceFromDate">Từ ngày</Label>
-              <Input
-                id="attendanceFromDate"
-                type="date"
-                value={fromDate}
-                onChange={(event) => setFromDate(event.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="attendanceToDate">Đến ngày</Label>
-              <Input
-                id="attendanceToDate"
-                type="date"
-                value={toDate}
-                onChange={(event) => setToDate(event.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Trạng thái ca</Label>
-              <Select value={status} onValueChange={(value) => setStatus(value as AttendanceStatus)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="CLOSED">Đã đóng</SelectItem>
-                  <SelectItem value="OPEN">Đang mở</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          {rangeInvalid && (
-            <p className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-              Khoảng thời gian xem chấm công tối đa là 1 tháng.
-            </p>
-          )}
-        </CardContent>
-      </Card>
+        <div className="grid gap-0.5 sm:gap-3 grid-cols-4">
+          <MetricCard
+            title="Tổng giờ làm"
+            value={formatWorkedMinutes(summary?.totalWorkedMinutes ?? 0)}
+            icon={<Clock3 className="h-2.5 w-2.5 sm:h-5 sm:w-5" />}
+          />
+          <MetricCard
+            title="Tổng số ca"
+            value={String(summary?.totalShifts ?? 0)}
+            icon={<CalendarClock className="h-2.5 w-2.5 sm:h-5 sm:w-5" />}
+          />
+          <MetricCard
+            title="Có ca"
+            value={String(summary?.totalEmployees ?? 0)}
+            icon={<Users className="h-2.5 w-2.5 sm:h-5 sm:w-5" />}
+          />
+          <MetricCard
+            title="Nhiều nhất"
+            value={summary?.topEmployee?.fullName ?? '—'}
+            subValue={summary?.topEmployee ? formatWorkedMinutes(summary.topEmployee.totalWorkedMinutes) : undefined}
+            icon={<Trophy className="h-2.5 w-2.5 sm:h-5 sm:w-5" />}
+          />
+        </div>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <MetricCard
-          title="Tổng giờ làm"
-          value={formatWorkedMinutes(summary?.totalWorkedMinutes ?? 0)}
-          icon={<Clock3 className="h-5 w-5" />}
-        />
-        <MetricCard
-          title="Tổng số ca"
-          value={String(summary?.totalShifts ?? 0)}
-          icon={<CalendarClock className="h-5 w-5" />}
-        />
-        <MetricCard
-          title="Nhân viên có ca"
-          value={String(summary?.totalEmployees ?? 0)}
-          icon={<Users className="h-5 w-5" />}
-        />
-        <MetricCard
-          title="Làm nhiều nhất"
-          value={summary?.topEmployee?.fullName ?? '—'}
-          subValue={summary?.topEmployee ? formatWorkedMinutes(summary.topEmployee.totalWorkedMinutes) : undefined}
-          icon={<Trophy className="h-5 w-5" />}
-        />
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Bảng chấm công nhân viên</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {summaryQuery.isLoading ? (
-            <div className="flex min-h-48 items-center justify-center gap-2 text-muted-foreground">
-              <Loader2 className="h-5 w-5 animate-spin" />
-              Đang tải dữ liệu chấm công...
-            </div>
-          ) : summaryQuery.isError ? (
-            <div className="flex min-h-48 flex-col items-center justify-center gap-3">
-              <p className="text-destructive">Không thể tải dữ liệu chấm công.</p>
-              <Button variant="outline" onClick={() => summaryQuery.refetch()}>Thử lại</Button>
-            </div>
-          ) : employees.length === 0 ? (
-            <div className="flex min-h-48 items-center justify-center text-muted-foreground">
-              Chưa có ca làm phù hợp với bộ lọc.
-            </div>
-          ) : (
-            <div className="overflow-x-auto rounded-xl border border-[#e5e7eb]">
-              <Table className="min-w-[860px] table-fixed">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[220px]">Nhân viên</TableHead>
-                    <TableHead className="w-[130px]">SĐT</TableHead>
-                    <TableHead className="w-[90px] text-center">Số ca</TableHead>
-                    <TableHead className="w-[120px] text-right">Tổng giờ</TableHead>
-                    <TableHead className="w-[110px] text-right">TB / ca</TableHead>
-                    <TableHead className="w-[150px]">Lần gần nhất</TableHead>
-                    <TableHead className="w-[90px] text-right">Chi tiết</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {employees.map((employee) => (
-                    <TableRow key={employee.userId}>
-                      <TableCell className="truncate font-medium">{employee.fullName}</TableCell>
-                      <TableCell className="truncate">{employee.phone || '—'}</TableCell>
-                      <TableCell className="text-center">
-                        <Badge variant="secondary">{employee.totalShifts}</Badge>
-                      </TableCell>
-                      <TableCell className="text-right font-semibold">
-                        {formatWorkedMinutes(employee.totalWorkedMinutes)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {formatWorkedMinutes(Math.round(employee.averageHoursPerShift * 60))}
-                      </TableCell>
-                      <TableCell>{formatDateTime(employee.lastShiftAt)}</TableCell>
-                      <TableCell className="text-right">
-                        <Button variant="ghost" size="sm" onClick={() => openDetail(employee.userId)}>
-                          Xem
-                          <ArrowRight className="ml-2 h-4 w-4" />
-                        </Button>
-                      </TableCell>
+        <Card className="border-[#e5e7eb] bg-white shadow-sm rounded-lg py-1 sm:py-3 px-1.5 sm:px-3">
+          <CardHeader className="p-1 sm:p-4 pb-0.5 sm:pb-2">
+            <CardTitle className="text-[10px] sm:text-lg font-black tracking-[-0.03em] text-[#022c22]">Bảng chấm công nhân viên</CardTitle>
+          </CardHeader>
+          <CardContent className="p-1 sm:p-4 pt-0 sm:pt-0">
+            {summaryQuery.isLoading ? (
+              <div className="flex min-h-24 items-center justify-center gap-1 text-[#71717a] text-[9px] sm:text-sm">
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                Đang tải dữ liệu chấm công...
+              </div>
+            ) : summaryQuery.isError ? (
+              <div className="flex min-h-24 flex-col items-center justify-center gap-1.5">
+                <p className="text-destructive text-[9px] sm:text-sm">Không thể tải dữ liệu chấm công.</p>
+                <Button variant="outline" size="sm" className="h-6 sm:h-9 text-[9px] sm:text-sm" onClick={() => summaryQuery.refetch()}>Thử lại</Button>
+              </div>
+            ) : employees.length === 0 ? (
+              <div className="flex min-h-24 items-center justify-center text-[#71717a] text-[9px] sm:text-sm">
+                Chưa có ca làm phù hợp với bộ lọc.
+              </div>
+            ) : (
+              <div className="overflow-x-auto rounded-lg sm:rounded-xl border border-[#e5e7eb] ">
+                <Table className="min-w-[460px] sm:min-w-[720px] table-fixed">
+                  <TableHeader>
+                    <TableRow className="hover:bg-transparent bg-[#022c22] border-b border-[#022c22]">
+                      <TableHead className="w-[90px] sm:w-[180px] px-1 py-1 sm:px-3 sm:py-2 font-bold text-white text-[8px] sm:text-xs">Nhân viên</TableHead>
+                      <TableHead className="w-[75px] sm:w-[110px] px-1 py-1 sm:px-3 sm:py-2 font-bold text-white text-[8px] sm:text-xs">SĐT</TableHead>
+                      <TableHead className="w-[40px] sm:w-[80px] px-1 py-1 sm:px-3 sm:py-2 font-bold text-white text-center text-[8px] sm:text-xs">Số ca</TableHead>
+                      <TableHead className="w-[60px] sm:w-[100px] px-1 py-1 sm:px-3 sm:py-2 font-bold text-white text-right text-[8px] sm:text-xs">Tổng giờ</TableHead>
+                      <TableHead className="w-[60px] sm:w-[100px] px-1 py-1 sm:px-3 sm:py-2 font-bold text-white text-right text-[8px] sm:text-xs">TB / ca</TableHead>
+                      <TableHead className="w-[90px] sm:w-[140px] px-1 py-1 sm:px-3 sm:py-2 font-bold text-white text-[8px] sm:text-xs">Lần gần nhất</TableHead>
+                      <TableHead className="w-[45px] sm:w-[80px] px-1 py-1 sm:px-3 sm:py-2 text-right font-bold text-white text-[8px] sm:text-xs">Chi tiết</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                  </TableHeader>
+                  <TableBody>
+                    {employees.map((employee) => (
+                      <TableRow key={employee.userId}>
+                        <TableCell className="px-1 py-0.5 sm:px-3 sm:py-2 truncate font-bold text-[#022c22] text-[8px] sm:text-sm">{employee.fullName}</TableCell>
+                        <TableCell className="px-1 py-0.5 sm:px-3 sm:py-2 truncate text-[8px] sm:text-sm text-[#71717a]">{employee.phone || '—'}</TableCell>
+                        <TableCell className="px-1 py-0.5 sm:px-3 sm:py-2 text-center">
+                          <Badge variant="secondary" className="px-1 py-0 sm:px-2 sm:py-0.5 text-[7px] sm:text-xs scale-[0.8] sm:scale-100 origin-center">{employee.totalShifts}</Badge>
+                        </TableCell>
+                        <TableCell className="px-1 py-0.5 sm:px-3 sm:py-2 text-right font-bold text-[#007a55] text-[8px] sm:text-sm">
+                          {formatWorkedMinutes(employee.totalWorkedMinutes)}
+                        </TableCell>
+                        <TableCell className="px-1 py-0.5 sm:px-3 sm:py-2 text-right text-[8px] sm:text-sm text-[#71717a]">
+                          {formatWorkedMinutes(Math.round(employee.averageHoursPerShift * 60))}
+                        </TableCell>
+                        <TableCell className="px-1 py-0.5 sm:px-3 sm:py-2 text-[8px] sm:text-sm text-[#71717a]">{formatDateTime(employee.lastShiftAt)}</TableCell>
+                        <TableCell className="px-1 py-0.5 sm:px-3 sm:py-2 text-right whitespace-nowrap">
+                          <Button variant="ghost" size="sm" className="h-5 sm:h-8 px-1 sm:px-3 text-[8px] sm:text-sm" onClick={() => openDetail(employee.userId)}>
+                            Xem
+                            <ArrowRight className="ml-0.5 h-2.5 w-2.5 sm:h-4 sm:w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   )
@@ -201,14 +202,14 @@ function MetricCard({
   icon: ReactNode
 }) {
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
-        <div className="text-primary">{icon}</div>
+    <Card className="border-[#e5e7eb] bg-white shadow-sm rounded-lg py-1 sm:py-3 px-1.5 sm:px-3 flex flex-col gap-0.5 sm:gap-1.5">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 p-0">
+        <CardTitle className="text-[7px] sm:text-xs font-medium text-muted-foreground truncate mr-0.5">{title}</CardTitle>
+        <div className="text-[#007a55] shrink-0">{icon}</div>
       </CardHeader>
-      <CardContent>
-        <p className="text-2xl font-black">{value}</p>
-        {subValue && <p className="mt-1 text-xs text-muted-foreground">{subValue}</p>}
+      <CardContent className="p-0">
+        <p className="text-[9px] sm:text-lg font-black text-[#022c22] truncate leading-tight">{value}</p>
+        {subValue && <p className="text-[6px] sm:text-xs text-muted-foreground truncate leading-none mt-0.5">{subValue}</p>}
       </CardContent>
     </Card>
   )

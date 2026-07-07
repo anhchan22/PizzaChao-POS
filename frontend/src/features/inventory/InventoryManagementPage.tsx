@@ -215,117 +215,116 @@ export default function InventoryManagementPage() {
   }
 
   return (
-    <div className="min-h-[calc(100vh-1.5rem)] rounded-2xl bg-[#d2f2e7] p-3 text-[#022c22] sm:p-4">
-      <div className="space-y-6 rounded-2xl border border-[#e5e7eb] bg-white/90 p-4 shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="flex items-center gap-2 text-2xl font-black leading-none tracking-[-0.04em] text-[#022c22] sm:text-3xl">
-            <Boxes className="h-7 w-7 text-primary" />
+    <div className="min-h-[calc(100vh-1.5rem)] rounded-2xl bg-[#d2f2e7] p-1.5 text-[#022c22] sm:p-4">
+      <div className="space-y-1.5 sm:space-y-4 rounded-xl border border-[#e5e7eb] bg-white p-1.5 sm:p-6 shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
+        <div className="flex items-center justify-between gap-2">
+          <h1 className="flex items-center gap-1 text-xs font-black leading-none tracking-[-0.04em] text-[#022c22] sm:text-3xl">
+            <Boxes className="h-4 w-4 sm:h-7 sm:w-7 text-[#007a55]" />
             Kho vật tư
           </h1>
+          {isOwner && (
+            <Button
+              size="sm"
+              className="h-5 px-2 rounded text-[9px] bg-[#00bc7d] text-white hover:bg-[#007a55] sm:h-9 sm:px-4 sm:rounded-full sm:text-sm"
+              onClick={openCreate}
+            >
+              <PlusIcon className="mr-0.5 h-2.5 w-2.5 sm:mr-1 sm:h-3.5 sm:w-3.5" />
+              Thêm vật tư
+            </Button>
+          )}
         </div>
-        {isOwner && (
-          <Button onClick={openCreate}>
-            <PlusIcon className="mr-2 h-4 w-4" />
-            Thêm vật tư
-          </Button>
-        )}
-      </div>
 
-      <Card>
-        <CardContent className="grid gap-3 p-4 md:grid-cols-[1fr_220px]">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={keyword}
-              onChange={(event) => setKeyword(event.target.value)}
-              className="pl-9"
-              placeholder="Tìm vật tư..."
-            />
-          </div>
-          <Select value={activeFilter} onValueChange={(value) => setActiveFilter(value as 'ALL' | 'ACTIVE' | 'INACTIVE')}>
-            <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ACTIVE">Đang dùng</SelectItem>
-              <SelectItem value="INACTIVE">Tạm tắt</SelectItem>
-              <SelectItem value="ALL">Tất cả</SelectItem>
-            </SelectContent>
-          </Select>
-        </CardContent>
-      </Card>
+        {/* <Card className="border-[#e5e7eb] bg-white shadow-sm rounded-lg"> */}
+          <CardContent className="flex items-center gap-1.5 sm:gap-3 p-1.5 sm:p-4">
+            <div className="relative flex-1 min-w-0">
+              <Search className="absolute left-2.5 top-1/2 h-3 w-3 sm:h-4 sm:w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={keyword}
+                onChange={(event) => setKeyword(event.target.value)}
+                className="pl-7 h-7 sm:h-9 text-xs sm:text-sm"
+                placeholder="Tìm vật tư..."
+              />
+            </div>
+            <Select value={activeFilter} onValueChange={(value) => setActiveFilter(value as 'ALL' | 'ACTIVE' | 'INACTIVE')}>
+              <SelectTrigger className="w-[80px] sm:w-[140px] h-7 sm:h-9 text-[10px] sm:text-sm px-1.5 sm:px-3 shrink-0"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ACTIVE" className="text-xs">Đang dùng</SelectItem>
+                <SelectItem value="INACTIVE" className="text-xs">Tạm tắt</SelectItem>
+                <SelectItem value="ALL" className="text-xs">Tất cả</SelectItem>
+              </SelectContent>
+            </Select>
+          </CardContent>
+        {/* </Card> */}
 
-      <div className="overflow-hidden rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Vật tư</TableHead>
-              <TableHead>Số lượng</TableHead>
-              <TableHead>Đơn vị</TableHead>
-              <TableHead>Trạng thái</TableHead>
-              <TableHead>Cập nhật cuối</TableHead>
-              <TableHead className="text-right">Thao tác</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {inventoryQuery.isLoading ? (
-              <TableRow><TableCell colSpan={6} className="text-center">Đang tải...</TableCell></TableRow>
-            ) : items.length === 0 ? (
-              <TableRow><TableCell colSpan={6} className="text-center">Chưa có vật tư nào</TableCell></TableRow>
-            ) : (
-              items.map((item) => (
-                <TableRow key={item.id}>
-                  <TableCell>
-                    <div className="font-semibold">{item.name}</div>
-                    {item.note && <p className="text-xs text-muted-foreground">{item.note}</p>}
-                  </TableCell>
-                  <TableCell className="font-bold text-primary">
-                    {numberText(item.currentQuantity)}
-                  </TableCell>
-                  <TableCell>{item.unit}</TableCell>
-                  <TableCell>
-                    <div className="flex flex-wrap gap-1">
-                      {item.lowStock ? (
-                        <Badge variant="destructive"><AlertTriangle className="mr-1 h-3 w-3" />Sắp hết</Badge>
-                      ) : (
-                        <Badge variant="secondary">Còn hàng</Badge>
+        <div className="overflow-x-auto rounded-xl border border-[#e5e7eb]">
+          <Table>
+            <TableHeader>
+              <TableRow className="hover:bg-transparent bg-[#022c22] border-b border-[#022c22]">
+                <TableHead className="px-1 py-1 sm:px-3 sm:py-2 font-bold text-white text-[9px] sm:text-xs">Vật tư</TableHead>
+                <TableHead className="w-16 px-1 py-1 sm:px-3 sm:py-2 font-bold text-white text-[9px] sm:text-xs">Số lượng</TableHead>
+                <TableHead className="w-12 px-1 py-1 sm:px-3 sm:py-2 font-bold text-white text-[9px] sm:text-xs">Đơn vị</TableHead>
+                <TableHead className="w-20 px-1 py-1 sm:px-3 sm:py-2 font-bold text-white text-[9px] sm:text-xs">Trạng thái</TableHead>
+                <TableHead className="w-28 px-1 py-1 sm:px-3 sm:py-2 font-bold text-white text-[9px] sm:text-xs">Cập nhật cuối</TableHead>
+                <TableHead className="w-28 px-1 py-1 sm:px-3 sm:py-2 text-right font-bold text-white text-[9px] sm:text-xs">Thao tác</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {inventoryQuery.isLoading ? (
+                <TableRow><TableCell colSpan={6} className="text-center py-2 text-[9px] sm:text-sm">Đang tải...</TableCell></TableRow>
+              ) : items.length === 0 ? (
+                <TableRow><TableCell colSpan={6} className="text-center py-2 text-[9px] sm:text-sm">Chưa có vật tư nào</TableCell></TableRow>
+              ) : (
+                items.map((item) => (
+                  <TableRow key={item.id}>
+                    <TableCell className="px-1 py-0.5 sm:px-3 sm:py-2">
+                      <div className="font-bold text-[#022c22] text-[9px] sm:text-sm">{item.name}</div>
+                      {item.note && <p className="text-[8px] sm:text-xs text-[#71717a] truncate max-w-[120px] sm:max-w-none">{item.note}</p>}
+                    </TableCell>
+                    <TableCell className="px-1 py-0.5 sm:px-3 sm:py-2 font-black text-[#007a55] text-[9px] sm:text-sm">
+                      {numberText(item.currentQuantity)}
+                    </TableCell>
+                    <TableCell className="px-1 py-0.5 sm:px-3 sm:py-2 text-[9px] sm:text-sm text-[#71717a]">{item.unit}</TableCell>
+                    <TableCell className="px-1 py-0.5 sm:px-3 sm:py-2">
+                      <div className="flex flex-wrap gap-0.5 sm:gap-1 scale-[0.8] sm:scale-100 origin-left">
+                        {item.lowStock ? (
+                          <Badge variant="destructive" className="px-1 py-0 sm:px-2 sm:py-0.5 text-[8px] sm:text-xs"><AlertTriangle className="mr-0.5 h-2 w-2 sm:h-3 sm:w-3" />Sắp hết</Badge>
+                        ) : (
+                          <Badge variant="secondary" className="px-1 py-0 sm:px-2 sm:py-0.5 text-[8px] sm:text-xs bg-emerald-50 text-emerald-700">Còn hàng</Badge>
+                        )}
+                        {!item.active && <Badge variant="outline" className="px-1 py-0 sm:px-2 sm:py-0.5 text-[8px] sm:text-xs">Tắt</Badge>}
+                      </div>
+                    </TableCell>
+                    <TableCell className="px-1 py-0.5 sm:px-3 sm:py-2 text-[9px] sm:text-sm text-[#71717a]">{dateTimeText(item.updatedAt ?? item.lastStocktakeAt)}</TableCell>
+                    <TableCell className="px-1 py-0.5 sm:px-3 sm:py-2 text-right whitespace-nowrap">
+                      <Button variant="outline" size="sm" className="h-5 sm:h-7 px-1.5 sm:px-3 text-[9px] sm:text-xs" onClick={() => openStockIn(item)}>
+                        <PackagePlus className="mr-0.5 h-2.5 w-2.5 sm:h-3.5 sm:w-3.5" />
+                        Nhập
+                      </Button>
+                      {isOwner && (
+                        <>
+                          <Button variant="ghost" size="icon" className="h-5 w-5 sm:h-7 sm:w-7 inline-flex" onClick={() => openEdit(item)}>
+                            <EditIcon className="h-3 w-3 sm:h-4 sm:w-4 text-[#022c22]" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-5 w-5 sm:h-7 sm:w-7 inline-flex"
+                            disabled={deleteMutation.isPending}
+                            onClick={() => {
+                              if (confirm('Bạn có chắc muốn xóa vật tư này?')) deleteMutation.mutate(item.id)
+                            }}
+                          >
+                            <TrashIcon className="h-3 w-3 sm:h-4 sm:w-4 text-destructive" />
+                          </Button>
+                        </>
                       )}
-                      {!item.active && <Badge variant="outline">Tạm tắt</Badge>}
-                    </div>
-                  </TableCell>
-                  <TableCell>{dateTimeText(item.updatedAt ?? item.lastStocktakeAt)}</TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="outline" size="sm" onClick={() => openStockIn(item)}>
-                      <PackagePlus className="mr-2 h-4 w-4" />
-                      Nhập
-                    </Button>
-                    {/* <Button variant="ghost" size="sm" onClick={() => openHistory(item)}>
-                      <History className="mr-2 h-4 w-4" />
-                      Lịch sử
-                    </Button> */}
-                    {isOwner && (
-                      <>
-                        <Button variant="ghost" size="icon" onClick={() => openEdit(item)}>
-                          <EditIcon className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          disabled={deleteMutation.isPending}
-                          onClick={() => {
-                            if (confirm('Bạn có chắc muốn xóa vật tư này?')) deleteMutation.mutate(item.id)
-                          }}
-                        >
-                          <TrashIcon className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
 
       <Dialog
         open={itemDialogOpen}

@@ -100,117 +100,119 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="min-h-[calc(100vh-1.5rem)] rounded-2xl bg-[#d2f2e7] p-3 text-[#022c22] sm:p-4">
-      <div className="mx-auto max-w-2xl space-y-6 rounded-2xl border border-[#e5e7eb] bg-white/90 p-4 shadow-[0_1px_2px_rgba(0,0,0,0.05)] py-8">
-      <div>
-        <h1 className="flex items-center gap-2 text-2xl font-black leading-none tracking-[-0.04em] text-[#022c22] sm:text-3xl">
-          <Settings className="h-7 w-7 text-[#007a55]" />
-          Cài đặt hệ thống
-        </h1>
-      </div>
-      <Card>
-        <CardHeader>
-          <CardTitle>Cấu hình thanh toán chuyển khoản</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="bankId">Mã ngân hàng</Label>
-              <Input
-                id="bankId"
-                placeholder="VD: MB, VCB, 970422..."
-                value={bankId}
-                onChange={(e) => setBankId(e.target.value.toUpperCase())}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="accountNo">Số tài khoản</Label>
-              <Input
-                id="accountNo"
-                placeholder="VD: 0123456789"
-                value={accountNo}
-                onChange={(e) => setAccountNo(e.target.value.replace(/\s/g, ''))}
-                maxLength={19}
-              />
-            </div>
-
-            <div>
-            <div className="space-y-2">
-            <Label htmlFor="accountName">Tên chủ tài khoản</Label>
-            <Input
-              id="accountName"
-              placeholder="VD: NGUYEN VAN A"
-              value={accountName}
-              onChange={(e) => setAccountName(e.target.value)}
-              className="uppercase"
-            />              
-            </div>
-
-          </div>
-          </div>
-
-
-
-          <div className="space-y-3 rounded-xl border p-4">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <Label htmlFor="qrImage">QR chuyển khoản</Label>
+    <div className="min-h-[calc(100vh-1.5rem)] rounded-2xl bg-[#d2f2e7] p-1.5 text-[#022c22] sm:p-4">
+      <div className="mx-auto max-w-2xl space-y-1.5 rounded-xl border border-[#e5e7eb] bg-white p-1.5 sm:p-6 shadow-[0_1px_2px_rgba(0,0,0,0.05)] sm:py-8">
+        <div>
+          <h1 className="flex items-center gap-1 text-xs font-black leading-none tracking-[-0.04em] text-[#022c22] sm:text-3xl">
+            <Settings className="h-4 w-4 sm:h-7 sm:w-7 text-[#007a55]" />
+            Cài đặt hệ thống
+          </h1>
+        </div>
+        <Card className="border-[#e5e7eb] bg-white shadow-sm rounded-lg">
+          <CardHeader className="p-2 sm:p-4 pb-1 sm:pb-2">
+            <CardTitle className="text-[10px] sm:text-lg font-black tracking-[-0.03em] text-[#022c22]">Cấu hình thanh toán chuyển khoản</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-1.5 p-2 pt-0 sm:p-4 sm:pt-0">
+            <div className="grid grid-cols-3 gap-1.5">
+              <div className="space-y-0.5">
+                <Label htmlFor="bankId" className="text-[8px] sm:text-xs">Mã ngân hàng</Label>
+                <Input
+                  id="bankId"
+                  placeholder="VD: MB, VCB..."
+                  value={bankId}
+                  onChange={(e) => setBankId(e.target.value.toUpperCase())}
+                  className="h-7 text-xs px-2 sm:h-9 sm:px-3 sm:text-sm"
+                />
               </div>
+
+              <div className="space-y-0.5">
+                <Label htmlFor="accountNo" className="text-[8px] sm:text-xs">Số tài khoản</Label>
+                <Input
+                  id="accountNo"
+                  placeholder="VD: 0123456789"
+                  value={accountNo}
+                  onChange={(e) => setAccountNo(e.target.value.replace(/\s/g, ''))}
+                  className="h-7 text-xs px-2 sm:h-9 sm:px-3 sm:text-sm"
+                  maxLength={19}
+                />
+              </div>
+
+              <div className="space-y-0.5">
+                <Label htmlFor="accountName" className="text-[8px] sm:text-xs">Tên chủ tài khoản</Label>
+                <Input
+                  id="accountName"
+                  placeholder="VD: NGUYEN VAN A"
+                  value={accountName}
+                  onChange={(e) => setAccountName(e.target.value)}
+                  className="uppercase h-7 text-xs px-2 sm:h-9 sm:px-3 sm:text-sm"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1.5 rounded-lg border p-1.5">
+              <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <Label htmlFor="qrImage" className="text-[8px] sm:text-xs">QR chuyển khoản</Label>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-6 text-[9px] px-2 rounded sm:h-9 sm:text-sm sm:px-4"
+                  disabled={uploadQrMutation.isPending}
+                  onClick={() => document.getElementById('qrImage')?.click()}
+                >
+                  {uploadQrMutation.isPending ? (
+                    <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <ImagePlus className="mr-1 h-3.5 w-3.5" />
+                  )}
+                  Tải ảnh QR
+                </Button>
+              </div>
+              <input
+                id="qrImage"
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(event) => {
+                  const file = event.target.files?.[0]
+                  if (file) uploadQrMutation.mutate(file)
+                  event.target.value = ''
+                }}
+              />
+              {qrImageUrl && (
+                <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center">
+                  <img
+                    src={qrImageUrl}
+                    alt="QR chuyển khoản"
+                    className="h-20 w-20 rounded-md border bg-white object-contain p-1"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="px-0 h-5 text-[9px] text-destructive sm:h-8 sm:text-sm"
+                      onClick={() => setQrImageUrl('')}
+                    >
+                      Xóa ảnh QR
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end pt-1.5">
               <Button
-                type="button"
-                variant="outline"
-                disabled={uploadQrMutation.isPending}
-                onClick={() => document.getElementById('qrImage')?.click()}
+                className="h-6 text-[9px] px-3.5 rounded bg-[#00bc7d] text-white hover:bg-[#007a55] sm:h-9 sm:text-sm sm:px-5 sm:rounded-full"
+                onClick={handleSave}
+                disabled={mutation.isPending}
               >
-                {uploadQrMutation.isPending ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <ImagePlus className="mr-2 h-4 w-4" />
-                )}
-                Tải ảnh QR
+                {mutation.isPending ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <Save className="mr-1 h-3.5 w-3.5" />}
+                Lưu cấu hình
               </Button>
             </div>
-            <input
-              id="qrImage"
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(event) => {
-                const file = event.target.files?.[0]
-                if (file) uploadQrMutation.mutate(file)
-                event.target.value = ''
-              }}
-            />
-            {(
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                <img
-                  src={qrImageUrl}
-                  alt="QR chuyển khoản"
-                  className="h-36 w-36 rounded-lg border bg-white object-contain p-2"
-                />
-                <div className="min-w-0 flex-1">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    className="px-0 text-destructive"
-                    onClick={() => setQrImageUrl('')}
-                  >
-                    Xóa ảnh QR
-                  </Button>
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className="flex justify-end pt-4">
-            <Button onClick={handleSave} disabled={mutation.isPending}>
-              {mutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-              Lưu cấu hình
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
       </div>
     </div>
   )

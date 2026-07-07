@@ -1,5 +1,5 @@
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
-import { ChevronLeft, ChevronRight, KeyRound, Loader2, LogOut, Soup, User as UserIcon } from 'lucide-react'
+import { ChevronLeft, ChevronRight, KeyRound, Loader2, LogOut, Soup, User as UserIcon, X } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
@@ -25,9 +25,12 @@ import {
 interface SidebarProps {
   collapsed: boolean
   onToggle: () => void
+  isMobile?: boolean
+  onNavigate?: () => void
+  className?: string
 }
 
-export function Sidebar({ collapsed, onToggle }: SidebarProps) {
+export function Sidebar({ collapsed, onToggle, isMobile, onNavigate, className }: SidebarProps) {
   const location = useLocation()
   const navigate = useNavigate()
   const { user, logout } = useAuthStore()
@@ -74,8 +77,10 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
   return (
     <aside
       className={cn(
-        'fixed left-0 top-0 z-40 flex h-screen flex-col border-r border-border/50 bg-sidebar transition-all duration-300',
-        collapsed ? 'w-[68px]' : 'w-[240px]'
+        'z-40 flex flex-col border-r border-border/50 bg-sidebar transition-all duration-300',
+        isMobile ? 'h-full w-full' : 'fixed left-0 top-0 h-screen',
+        !isMobile && (collapsed ? 'w-[68px]' : 'w-[240px]'),
+        className
       )}
     >
       {/* Logo + Toggle button */}
@@ -101,7 +106,9 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
           onClick={onToggle}
           className="h-7 w-7 shrink-0"
         >
-          {collapsed ? (
+          {isMobile ? (
+            <X className="h-4 w-4" />
+          ) : collapsed ? (
             <ChevronRight className="h-4 w-4" />
           ) : (
             <ChevronLeft className="h-4 w-4" />
@@ -139,6 +146,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
                           ? 'bg-primary/10 text-primary shadow-sm'
                           : 'text-muted-foreground hover:bg-accent hover:text-foreground'
                       )}
+                      onClick={() => isMobile && onNavigate?.()}
                     >
                       <Icon
                         className={cn(

@@ -78,74 +78,79 @@ export default function CategoryManagementPage() {
   }
 
   return (
-    <div className="min-h-[calc(100vh-1.5rem)] rounded-2xl bg-[#d2f2e7] p-3 text-[#022c22] sm:p-4">
-      <div className="space-y-6 rounded-2xl border border-[#e5e7eb] bg-white/90 p-4 shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
-      <div className="flex items-center justify-between">
-        <h1 className="flex items-center gap-2 text-2xl font-black leading-none tracking-[-0.04em] text-[#022c22] sm:text-3xl">
-          <Tags className="h-7 w-7 text-[#007a55]" />
-          Danh mục sản phẩm
-        </h1>
-        {isOwner && (
-          <Button onClick={() => {
-            setEditingItem(null)
-            setFormData({ name: "", description: "", sortOrder: 0, isActive: true })
-            setIsOpen(true)
-          }}>
-            <PlusIcon className="mr-2 h-4 w-4" />
-            Thêm danh mục
-          </Button>
-        )}
-      </div>
+    <div className="min-h-[calc(100vh-1.5rem)] rounded-2xl bg-[#d2f2e7] p-1.5 text-[#022c22] sm:p-4">
+      <div className="space-y-1.5 sm:space-y-4 rounded-xl border border-[#e5e7eb] bg-white p-1.5 sm:p-6 shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
+        <div className="flex items-center justify-between gap-2">
+          <h1 className="flex items-center gap-1 text-xs font-black leading-none tracking-[-0.04em] text-[#022c22] sm:text-3xl">
+            <Tags className="h-4 w-4 sm:h-7 sm:w-7 text-[#007a55]" />
+            Danh mục sản phẩm
+          </h1>
+          {isOwner && (
+            <Button
+              size="sm"
+              className="h-5 px-2 rounded text-[9px] bg-[#00bc7d] text-white hover:bg-[#007a55] sm:h-9 sm:px-4 sm:rounded-full sm:text-sm"
+              onClick={() => {
+                setEditingItem(null)
+                setFormData({ name: "", description: "", sortOrder: 0, isActive: true })
+                setIsOpen(true)
+              }}
+            >
+              <PlusIcon className="mr-0.5 h-2.5 w-2.5 sm:mr-1 sm:h-3.5 sm:w-3.5" />
+              Thêm danh mục
+            </Button>
+          )}
+        </div>
 
-      <div className="overflow-hidden rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>STT</TableHead>
-              <TableHead>Tên danh mục</TableHead>
-              <TableHead>Mô tả</TableHead>
-              <TableHead>Thứ tự</TableHead>
-              <TableHead>Trạng thái</TableHead>
-              {isOwner && <TableHead className="text-right">Thao tác</TableHead>}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              <TableRow><TableCell colSpan={isOwner ? 6 : 5} className="text-center">Đang tải...</TableCell></TableRow>
-            ) : categories.length === 0 ? (
-              <TableRow><TableCell colSpan={isOwner ? 6 : 5} className="text-center">Chưa có danh mục nào</TableCell></TableRow>
-            ) : (
-              categories.map((cat, idx) => (
-                <TableRow key={cat.id}>
-                  <TableCell>{idx + 1}</TableCell>
-                  <TableCell className="font-medium">{cat.name}</TableCell>
-                  <TableCell>{cat.description}</TableCell>
-                  <TableCell>{cat.sortOrder}</TableCell>
-                  <TableCell>
-                    <Switch
-                      checked={cat.isActive}
-                      disabled={!isOwner}
-                      onCheckedChange={(checked) => updateMutation.mutate({ id: cat.id, data: { ...cat, isActive: checked }})}
-                    />
-                  </TableCell>
-                  {isOwner && (
-                    <TableCell className="text-right">
-                      <Button variant="ghost" size="icon" onClick={() => openEdit(cat)}>
-                        <EditIcon className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" onClick={() => {
-                        if (confirm("Bạn có chắc muốn xóa?")) deleteMutation.mutate(cat.id)
-                      }}>
-                        <TrashIcon className="h-4 w-4 text-destructive" />
-                      </Button>
+        <div className="overflow-x-auto rounded-xl border border-[#e5e7eb]">
+          <Table>
+            <TableHeader>
+              <TableRow className="hover:bg-transparent bg-[#022c22] border-b border-[#022c22]">
+                <TableHead className="w-8 px-1 py-1 sm:px-3 sm:py-2 font-bold text-white text-[9px] sm:text-xs">STT</TableHead>
+                <TableHead className="px-1 py-1 sm:px-3 sm:py-2 font-bold text-white text-[9px] sm:text-xs">Tên danh mục</TableHead>
+                <TableHead className="px-1 py-1 sm:px-3 sm:py-2 font-bold text-white text-[9px] sm:text-xs">Mô tả</TableHead>
+                <TableHead className="w-12 px-1 py-1 sm:px-3 sm:py-2 font-bold text-white text-[9px] sm:text-xs">Thứ tự</TableHead>
+                <TableHead className="w-16 px-1 py-1 sm:px-3 sm:py-2 font-bold text-white text-[9px] sm:text-xs">Trạng thái</TableHead>
+                {isOwner && <TableHead className="w-16 px-1 py-1 sm:px-3 sm:py-2 text-right font-bold text-white text-[9px] sm:text-xs">Thao tác</TableHead>}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                <TableRow><TableCell colSpan={isOwner ? 6 : 5} className="text-center py-2 text-[9px] sm:text-sm">Đang tải...</TableCell></TableRow>
+              ) : categories.length === 0 ? (
+                <TableRow><TableCell colSpan={isOwner ? 6 : 5} className="text-center py-2 text-[9px] sm:text-sm">Chưa có danh mục nào</TableCell></TableRow>
+              ) : (
+                categories.map((cat, idx) => (
+                  <TableRow key={cat.id}>
+                    <TableCell className="px-1 py-0.5 sm:px-3 sm:py-2 text-[9px] sm:text-sm text-[#71717a]">{idx + 1}</TableCell>
+                    <TableCell className="px-1 py-0.5 sm:px-3 sm:py-2 text-[9px] sm:text-sm font-bold text-[#022c22]">{cat.name}</TableCell>
+                    <TableCell className="px-1 py-0.5 sm:px-3 sm:py-2 text-[9px] sm:text-sm text-[#71717a]">{cat.description}</TableCell>
+                    <TableCell className="px-1 py-0.5 sm:px-3 sm:py-2 text-[9px] sm:text-sm text-[#007a55] font-bold">{cat.sortOrder}</TableCell>
+                    <TableCell className="px-1 py-0.5 sm:px-3 sm:py-2 text-[9px] sm:text-sm">
+                      <Switch
+                        checked={cat.isActive}
+                        disabled={!isOwner}
+                        onCheckedChange={(checked) => updateMutation.mutate({ id: cat.id, data: { ...cat, isActive: checked }})}
+                        className="scale-[0.65] sm:scale-100 origin-left"
+                      />
                     </TableCell>
-                  )}
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
+                    {isOwner && (
+                      <TableCell className="px-1 py-0.5 sm:px-3 sm:py-2 text-right whitespace-nowrap">
+                        <Button variant="ghost" size="icon" className="h-4 w-4 sm:h-7 sm:w-7" onClick={() => openEdit(cat)}>
+                          <EditIcon className="h-3 w-3 sm:h-4 sm:w-4 text-[#022c22]" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-4 w-4 sm:h-7 sm:w-7" onClick={() => {
+                          if (confirm("Bạn có chắc muốn xóa?")) deleteMutation.mutate(cat.id)
+                        }}>
+                          <TrashIcon className="h-3 w-3 sm:h-4 sm:w-4 text-destructive" />
+                        </Button>
+                      </TableCell>
+                    )}
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent>
